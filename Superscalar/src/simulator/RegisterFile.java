@@ -11,5 +11,26 @@ public class RegisterFile {
 
     public RegisterFile() {
         this.registers = new ArrayList<Register>();
+        // Initialize 16 register
+        this.registers.add(new Register());
+        this.registers.add(new Register());
+        this.registers.add(new Register());
+        this.registers.add(new Register());
+        this.registers.add(new Register());
+        this.registers.add(new Register());
+        this.registers.add(new Register());
+        this.registers.add(new Register());
+        this.registers.add(new Register());
+        this.registers.add(new Register());
+        this.registers.add(new Register());
+        this.registers.add(new Register());
+        this.registers.add(new Register());
+        this.registers.add(new Register());
+        this.registers.add(new Register());
+        this.registers.add(new Register());
+    }
+
+    public Register getRegister(int index) {
+        return registers.get(index);
     }
 }

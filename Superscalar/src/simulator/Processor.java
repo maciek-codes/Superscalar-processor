@@ -2,7 +2,6 @@ package simulator;
 
 import simulator.instructions.DecodedInstruction;
 import simulator.instructions.EncodedInstruction;
-import simulator.instructions.Instruction;
 
 /**
  * Created by Maciej Kumorek on 9/30/2014.
@@ -12,7 +11,7 @@ public class Processor {
     /**
      * Register file in the processor
      */
-    private RegisterFile regFile;
+    private RegisterFile registerFile;
 
     /**
      * Main memory bus
@@ -35,7 +34,7 @@ public class Processor {
 
         this.mainMemory = memory;
         this.pc.setValue(0x0);
-        this.regFile = new RegisterFile();
+        this.registerFile = new RegisterFile();
     }
 
     public void run() {
@@ -86,7 +85,19 @@ public class Processor {
 
     }
 
+    /**
+     * Set running flag, useful for termination
+     * @param running
+     */
     public void setRunning(boolean running) {
         this.isRunning = running;
+    }
+
+    /**
+     * Getter for register file
+     * @return
+     */
+    public RegisterFile getRegisterFile() {
+        return this.registerFile;
     }
 }
