@@ -5,9 +5,9 @@ import simulator.Register;
 import simulator.RegisterFile;
 
 /**
- * Created by Maciej Kumorek on 10/24/2014.
+ * Created by Maciej Kumorek on 10/27/2014.
  */
-public class AddInstruction extends DecodedInstruction {
+public class SubInstruction extends DecodedInstruction {
 
     private final int desinationRegister;
     private final int lhs;
@@ -15,8 +15,8 @@ public class AddInstruction extends DecodedInstruction {
 
     private Integer result;
 
-    public AddInstruction(int[] args) {
-        super(Operand.ADD);
+    public SubInstruction(int[] args) {
+        super(Operand.SUB);
 
         // First argument is source register name
         this.desinationRegister = args[0];
@@ -32,7 +32,7 @@ public class AddInstruction extends DecodedInstruction {
     public void execute(Processor processor) {
 
         // Perform addition
-        this.result = this.lhs + this.rhs;
+        this.result = this.lhs - this.rhs;
     }
 
     @Override

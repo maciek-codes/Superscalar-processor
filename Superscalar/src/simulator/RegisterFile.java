@@ -33,4 +33,8 @@ public class RegisterFile {
     public Register getRegister(int index) {
         return registers.get(index);
     }
+
+    public int getCount() {
+        return this.registers.size();
+    }
 }

@@ -27,6 +27,9 @@ public class Processor {
     private DecodedInstruction currentInstruction;
     private EncodedInstruction currentEncodedInstruction;
 
+    private int writeBackDestination = 0;
+    private int writeBackValue = 0;
+
     /**
      * Creates new processor
      */
@@ -67,7 +70,7 @@ public class Processor {
      * Decode stage
      */
     private void decode() {
-        this.currentInstruction = this.currentEncodedInstruction.decode();
+        this.currentInstruction = this.currentEncodedInstruction.decode(this.registerFile);
     }
 
     /**
@@ -83,6 +86,7 @@ public class Processor {
      */
     private void writeBack() {
 
+        this.currentInstruction.writeBack(this);
     }
 
     /**

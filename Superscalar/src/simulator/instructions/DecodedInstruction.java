@@ -18,6 +18,8 @@ public abstract class DecodedInstruction {
 
     public abstract void execute(Processor processor);
 
+    public abstract void writeBack(Processor processor);
+
     public Operand getOperand() {
         return this.op;
     }

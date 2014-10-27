@@ -9,21 +9,17 @@ import simulator.RegisterFile;
  */
 public class MoveInstruction extends DecodedInstruction {
 
-    final private int destinationRegister;
-    private int sourceRegister = -1;
+    /**
+     * Value to be moved
+     */
     final private int value;
 
-    public MoveInstruction(String destinationRegisterName, int value) {
+    final private int desinationRegister;
+
+    public MoveInstruction(int desinationRegister, int value) {
         super(Operand.MOV);
-
-        this.destinationRegister =  this.parseRegisterNumber(destinationRegisterName);
         this.value = value;
-    }
-
-    public MoveInstruction(String destinationRegisterName, String sourceRegisterName) {
-        this(destinationRegisterName, 0);
-
-        this.sourceRegister = this.parseRegisterNumber(sourceRegisterName);
+        this.desinationRegister = desinationRegister;
     }
 
     /**
@@ -32,18 +28,14 @@ public class MoveInstruction extends DecodedInstruction {
      */
     @Override
     public void execute(Processor processor) {
+        // No logic in MOV
+        return;
+    }
 
-        final RegisterFile registerFile = processor.getRegisterFile();
+    public void writeBack(Processor processor) {
 
-        // Find new value (in register or immediate)
-        int newValue;
-        if(this.sourceRegister >= 0) {
-            newValue = registerFile.getRegister(sourceRegister).getValue();
-        } else {
-            newValue = this.value;
-        }
-
-        // Move to destination
-        registerFile.getRegister(destinationRegister).setValue(newValue);
+        // Store value in destination register
+        Register register = processor.getRegisterFile().getRegister(this.desinationRegister);
+        register.setValue(this.value);
     }
 }

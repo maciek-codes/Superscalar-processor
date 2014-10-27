@@ -1,5 +1,7 @@
 package simulator.instructions;
 
+import simulator.RegisterFile;
+
 import java.util.Objects;
 
 /**
@@ -68,5 +70,5 @@ public abstract class Instruction {
         return this.encodedInstruction;
     }
 
-    public abstract DecodedInstruction decode();
+    public abstract DecodedInstruction decode(RegisterFile registerFile);
 }
