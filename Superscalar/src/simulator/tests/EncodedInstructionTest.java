@@ -1,6 +1,8 @@
 package simulator.tests;
 
 import org.junit.Test;
+import simulator.Memory;
+import simulator.Processor;
 import simulator.RegisterFile;
 import simulator.instructions.DecodedInstruction;
 import simulator.instructions.Instruction;
@@ -17,9 +19,9 @@ public class EncodedInstructionTest {
         String rawInput = "ADD r0, r0, r1";
         Operand expectedOperand = Operand.ADD;
 
-        RegisterFile regs = new RegisterFile();
+        Processor proc = new Processor(new Memory());
         Instruction instruction = new EncodedInstruction(rawInput);
-        DecodedInstruction decodedInstruction = instruction.decode(regs);
+        DecodedInstruction decodedInstruction = instruction.decode(proc);
         assertEquals("ADD operand not parsed", expectedOperand, decodedInstruction.getOperand());
     }
 
@@ -39,9 +41,9 @@ public class EncodedInstructionTest {
 
         Instruction instruction = new EncodedInstruction(instructionString, label);
 
-        RegisterFile regs = new RegisterFile();
+        Processor proc = new Processor(new Memory());
 
-        DecodedInstruction decodedInstruction = instruction.decode(regs);
+        DecodedInstruction decodedInstruction = instruction.decode(proc);
 
         assertEquals("MUL operand not parsed", expectedOperand, decodedInstruction.getOperand());
         assertEquals("Label is not assigned", "label1", instruction.getLabel());

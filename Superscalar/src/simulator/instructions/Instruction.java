@@ -1,5 +1,6 @@
 package simulator.instructions;
 
+import simulator.Processor;
 import simulator.RegisterFile;
 
 import java.util.Objects;
@@ -41,20 +42,20 @@ public abstract class Instruction {
             return Operand.SUB;
         } else if(string.startsWith("mul ")) {
             return Operand.MUL;
-        } else if(string.startsWith("bl ")) {
-            return Operand.BL;
-        } else if(string.startsWith("blt")) {
-            return Operand.BLT;
         } else if(string.startsWith("mov ")) {
             return Operand.MOV;
         } else if(string.startsWith("ldm ")) {
             return Operand.LDM;
         } else if(string.startsWith("stm ")) {
             return Operand.STM;
-        } else if(string.startsWith("jmp ")) {
-            return Operand.JMP;
         } else if(string.startsWith("svc ")) {
             return Operand.SVC;
+        } else if(string.startsWith("cmp ")) {
+            return Operand.CMP;
+        } else if(string.startsWith("bge ")) {
+            return Operand.BGE;
+        } else if(string.startsWith("jmp ")) {
+            return Operand.JMP;
         }
 
         throw new RuntimeException("Unknown operand in string " + string);
@@ -70,7 +71,7 @@ public abstract class Instruction {
         return this.encodedInstruction;
     }
 
-    public abstract DecodedInstruction decode(RegisterFile registerFile);
+    public abstract DecodedInstruction decode(Processor processor);
 
     @Override
     public String toString() {

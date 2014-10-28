@@ -79,7 +79,9 @@ public class Processor {
      * Decode stage
      */
     private void decode() {
-        this.currentInstruction = this.currentEncodedInstruction.decode(this.registerFile);
+
+        // Decode fetched instruction
+        this.currentInstruction = this.currentEncodedInstruction.decode(this);
     }
 
     /**
@@ -120,5 +122,9 @@ public class Processor {
 
     public Register getPc() {
         return this.pc;
+    }
+
+    public StatusRegister getStatusRegister() {
+        return this.status;
     }
 }

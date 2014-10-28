@@ -1,7 +1,9 @@
 package simulator.instructions;
 
 import simulator.Memory;
+import simulator.Processor;
 import simulator.RegisterFile;
+import simulator.StatusRegister;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -39,13 +41,16 @@ public class EncodedInstruction extends Instruction {
 
     /**
      * Factory of instructions
-     * @return
+     * @return instance of Decoded instruction
      */
     @Override
-    public DecodedInstruction decode(RegisterFile registerFile) {
+    public DecodedInstruction decode(Processor processor) {
 
         // Find the operand in the string
         Operand operand = this.parseOperand(this.encodedInstruction);
+
+        // Get register file
+        RegisterFile registerFile = processor.getRegisterFile();
 
         // Choose decoding logic for an operation
         if(operand == Operand.SVC) {
@@ -69,9 +74,54 @@ public class EncodedInstruction extends Instruction {
         } else if(operand == Operand.STM) {
             // Decode STM - memory store
             return this.decodeStoreMemory(registerFile);
+        } else if(operand == Operand.CMP) {
+            // Decode CMP
+            return this.decodeCmp(registerFile);
+        } else if(operand == Operand.BGE) {
+            // Decode BGE - Branch - greater - equal
+            return this.decodeBranchGreaterEqual(processor.getStatusRegister());
+        } else if(operand == Operand.JMP) {
+            // Decode JMP - Jump instruction
+            return this.decodeJmp();
         }
 
         throw new RuntimeException("Cannot decode instruction with operand: " + operand);
+    }
+
+    /**
+     * Decode JMP
+     *
+     * JMP takes only one argument, absolute address to jump to
+     * @return JumpInstructon instance
+     */
+    private DecodedInstruction decodeJmp() {
+        int address = this.getImmediateParam();
+        return new JumpInstruction(address);
+    }
+
+    private DecodedInstruction decodeBranchGreaterEqual(StatusRegister statusRegister) {
+
+        int address = this.getImmediateParam();
+
+        StatusRegister.Status status = statusRegister.getStatus();
+
+        return new BranchGreaterEqualInstruction(address, status);
+    }
+
+    /**
+     * Find single immediate argument value
+     * @return immediate value parsed
+     */
+    private int getImmediateParam() {
+
+        // Try to get immediate value
+        Matcher intermediateValMatcher = interValPattern.matcher(this.getEncodedInstruction());
+
+        if(!intermediateValMatcher.find()) {
+            throw new RuntimeException("Second source register or immediate should be specified");
+        }
+
+        return this.getImmediateValueFromString(intermediateValMatcher);
     }
 
     private int[] getTreeParams(RegisterFile registerFile) {
@@ -114,7 +164,7 @@ public class EncodedInstruction extends Instruction {
         Matcher intermediateValMatcher = interValPattern.matcher(this.getEncodedInstruction());
 
         if(intermediateValMatcher.find()) {
-            params[2] =  getImmediateValueFromString(intermediateValMatcher);;
+            params[2] =  getImmediateValueFromString(intermediateValMatcher);
         } else {
             throw new RuntimeException("Second source register or immediate should be specified");
         }
@@ -141,7 +191,7 @@ public class EncodedInstruction extends Instruction {
      * ADD must specify desination register
      * ADD can take two registers
      * or one register and intermediate value
-     * @param registerFile
+     * @param registerFile processor's register file
      */
     private DecodedInstruction decodeAdd(RegisterFile registerFile) {
 
@@ -204,6 +254,55 @@ public class EncodedInstruction extends Instruction {
         args[0] = registerFile.getRegister(registerNumber).getValue();
 
         return new StoreMemoryInstruction(args);
+    }
+
+    private DecodedInstruction decodeCmp(RegisterFile registerFile) {
+
+        int[] args = this.getTwoArgValues(registerFile);
+
+        return new CompareInstruction(args);
+    }
+
+    private int[] getTwoArgValues(RegisterFile registerFile) {
+
+        // Try to get immediate value
+        Matcher intermediateValMatcher = interValPattern.matcher(this.getEncodedInstruction());
+
+        int[] args = new int[2];
+
+        // Get destination register
+        Matcher matcher = registerPattern.matcher(this.getEncodedInstruction());
+        String registerName;
+        int registerNumber = -1;
+
+        if(matcher.find()) {
+            registerName = matcher.group(0);
+            registerNumber = this.getRegisterNumberFromString(registerName);
+            args[0] = registerFile.getRegister(registerNumber).getValue();
+        } else if(intermediateValMatcher.find()) {
+            int immediateValue = getImmediateValueFromString(intermediateValMatcher);
+            args[0] = immediateValue;
+        } else {
+            // LHS must be specified
+            throw new RuntimeException("LHS register not specified in instruction: "
+                    + this.getEncodedInstruction());
+        }
+
+        // Get second register or immediate value
+        if(matcher.find()) {
+            registerName = matcher.group(0);
+            registerNumber = this.getRegisterNumberFromString(registerName);
+            args[1] = registerFile.getRegister(registerNumber).getValue();
+        } else if(intermediateValMatcher.find()) {
+            int immediateValue = getImmediateValueFromString(intermediateValMatcher);
+            args[1] = immediateValue;
+        } else {
+            // RHS must be specified
+            throw new RuntimeException("RHS register not specified in instruction: "
+                    + this.getEncodedInstruction());
+        }
+
+        return args;
     }
 
     private DecodedInstruction decodeMov(RegisterFile registerFile) {

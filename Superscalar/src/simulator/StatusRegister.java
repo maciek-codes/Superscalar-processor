@@ -8,9 +8,7 @@ public class StatusRegister extends Register {
     public enum Status {
         EQ(0),
         LT(1),
-        LE(2),
-        GT(3),
-        GE(4);
+        GT(2);
 
         private final int value;
 

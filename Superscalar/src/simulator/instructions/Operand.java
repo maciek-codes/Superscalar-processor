@@ -5,7 +5,8 @@ package simulator.instructions;
  */
 public enum Operand {
     MOV,
-    ADD,
-    SUB,
-    MUL, BL, LDM, JMP, BLT, SVC, CMP, BGE, STM
+    ADD, SUB, MUL,
+    LDM, STM,
+    SVC,
+    CMP, BGE, JMP
 }
