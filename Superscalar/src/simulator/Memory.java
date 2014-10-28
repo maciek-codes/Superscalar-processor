@@ -28,8 +28,10 @@ public class Memory {
 
         int index = addressToIndex(address);
 
-        if(values.size() >= index) {
+        if(index >= values.size()) {
             values.add(index, value);
+        } else {
+            values.set(index, value);
         }
     }
 
@@ -92,7 +94,6 @@ public class Memory {
 
                     if (instruction.getEncodedInstruction().contains(label)) {
                         instruction.replaceLabelWithAddress(label, labelsAddressMap.get(label));
-                        this.saveToMemory(instruction, address);
                     }
                 }
             }
@@ -111,5 +112,9 @@ public class Memory {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    public int getMaxAddress() {
+        return this.values.size() * 4;
     }
 }

@@ -71,4 +71,9 @@ public abstract class Instruction {
     }
 
     public abstract DecodedInstruction decode(RegisterFile registerFile);
+
+    @Override
+    public String toString() {
+        return this.getEncodedInstruction();
+    }
 }

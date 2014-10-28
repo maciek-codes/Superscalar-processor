@@ -66,6 +66,9 @@ public class EncodedInstruction extends Instruction {
         } else if(operand == Operand.LDM) {
             // Decode LDM - memory load
             return this.decodeLoadMemory(registerFile);
+        } else if(operand == Operand.STM) {
+            // Decode STM - memory store
+            return this.decodeStoreMemory(registerFile);
         }
 
         throw new RuntimeException("Cannot decode instruction with operand: " + operand);
@@ -183,6 +186,24 @@ public class EncodedInstruction extends Instruction {
     private DecodedInstruction decodeLoadMemory(RegisterFile registerFile) {
         int[] args = this.getTreeParams(registerFile);
         return new LoadMemoryInstruction(args);
+    }
+
+    /**
+     * Decode LDM instruction
+     *
+     * LDM must specify destination register
+     * LDM can take two registers or a register and immediate
+     * @param registerFile
+     * @return
+     */
+    private DecodedInstruction decodeStoreMemory(RegisterFile registerFile) {
+        int[] args = this.getTreeParams(registerFile);
+
+        // Actually first register is not destination, so we need to get its value rather than number
+        int registerNumber = args[0];
+        args[0] = registerFile.getRegister(registerNumber).getValue();
+
+        return new StoreMemoryInstruction(args);
     }
 
     private DecodedInstruction decodeMov(RegisterFile registerFile) {

@@ -22,6 +22,15 @@ public class Processor {
      * Program counter
      */
     private Register pc = new Register();
+
+    /**
+     * Status Register
+     */
+    private StatusRegister status = new StatusRegister();
+
+    /**
+     * Flag indicating if the execution should continue
+     */
     private boolean isRunning;
 
     private DecodedInstruction currentInstruction;
@@ -107,5 +116,9 @@ public class Processor {
 
     public final Memory getMemory() {
         return this.mainMemory;
+    }
+
+    public Register getPc() {
+        return this.pc;
     }
 }

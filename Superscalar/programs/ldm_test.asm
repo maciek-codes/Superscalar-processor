@@ -4,6 +4,9 @@ ADD r0, r0, 0x8
 LDM r2, r0, arrayA	; load A[2]
 ADD r0, r0, 0x4
 LDM r3, r0, arrayA	; load A[3]
+ADD r0, r0, 0x4     ;
+MOV r4, 0xFF
+STM r4, r0, arrayA  ; A[4] = 0xFF
 end:
 SVC 0
 arrayA: ; array A

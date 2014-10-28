@@ -34,6 +34,12 @@ public class SvcInstruction extends DecodedInstruction {
                 System.out.print("\t\t");
             }
         }
+
+        System.out.println("Memory dump: ");
+        for(int i = 0; i <processor.getMemory().getMaxAddress(); i += 0x4) {
+            System.out.println("Addr: 0x" + Integer.toHexString(i)
+                    + " " + processor.getMemory().getFromMemory(i).toString());
+        }
     }
 
     @Override
