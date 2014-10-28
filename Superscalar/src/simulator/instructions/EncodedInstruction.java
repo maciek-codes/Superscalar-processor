@@ -1,5 +1,6 @@
 package simulator.instructions;
 
+import simulator.Memory;
 import simulator.RegisterFile;
 
 import java.util.regex.Matcher;
@@ -11,7 +12,7 @@ import java.util.regex.Pattern;
 public class EncodedInstruction extends Instruction {
 
     final Pattern registerPattern = Pattern.compile("r\\d\\d?");
-    final Pattern interValPattern = Pattern.compile("0x\\d+");
+    final Pattern interValPattern = Pattern.compile("0x\\w+");
 
     public EncodedInstruction(String instructionString) {
 
@@ -33,7 +34,7 @@ public class EncodedInstruction extends Instruction {
     }
 
     public void replaceLabelWithAddress(String label, Integer integer) {
-        this.encodedInstruction = this.encodedInstruction.replace(label, integer.toString());
+        this.encodedInstruction = this.encodedInstruction.replace(label, "0x" + Integer.toHexString(integer));
     }
 
     /**
@@ -62,6 +63,9 @@ public class EncodedInstruction extends Instruction {
         } else if(operand == Operand.SUB) {
             // Decode SUB
             return this.decodeSub(registerFile);
+        } else if(operand == Operand.LDM) {
+            // Decode LDM - memory load
+            return this.decodeLoadMemory(registerFile);
         }
 
         throw new RuntimeException("Cannot decode instruction with operand: " + operand);
@@ -116,8 +120,8 @@ public class EncodedInstruction extends Instruction {
     }
 
     private int getImmediateValueFromString(Matcher intermediateValMatcher) {
-        // Ignore 0x
-        return Integer.parseInt(intermediateValMatcher.group(0).substring(2));
+        String hexNumberStr = intermediateValMatcher.group(0);
+        return Memory.tryParse(hexNumberStr);
     }
 
     private int getRegisterNumberFromString(String registerName) {
@@ -166,6 +170,19 @@ public class EncodedInstruction extends Instruction {
     private DecodedInstruction decodeSub(RegisterFile registerFile) {
         int[] args = this.getTreeParams(registerFile);
         return new SubInstruction(args);
+    }
+
+    /**
+     * Decode LDM instruction
+     *
+     * LDM must specify destination register
+     * LDM can take two registers or a register and immediate
+     * @param registerFile
+     * @return
+     */
+    private DecodedInstruction decodeLoadMemory(RegisterFile registerFile) {
+        int[] args = this.getTreeParams(registerFile);
+        return new LoadMemoryInstruction(args);
     }
 
     private DecodedInstruction decodeMov(RegisterFile registerFile) {

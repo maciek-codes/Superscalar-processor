@@ -101,7 +101,11 @@ public class Processor {
      * Getter for register file
      * @return
      */
-    public RegisterFile getRegisterFile() {
+    public final RegisterFile getRegisterFile() {
         return this.registerFile;
+    }
+
+    public final Memory getMemory() {
+        return this.mainMemory;
     }
 }

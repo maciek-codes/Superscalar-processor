@@ -79,11 +79,17 @@ public class Memory {
         // Resolve labels
         for(int i = 0; i < address; i += 0x4) {
             Object memoryValue = this.getFromMemory(i);
-            if(memoryValue.getClass() == Instruction.class) {
+            if(memoryValue instanceof EncodedInstruction) {
 
                 EncodedInstruction instruction = (EncodedInstruction) memoryValue;
 
                 for (String label : labels) {
+
+                    // Ignore empty string
+                    if(label.equalsIgnoreCase("")) {
+                        continue;
+                    }
+
                     if (instruction.getEncodedInstruction().contains(label)) {
                         instruction.replaceLabelWithAddress(label, labelsAddressMap.get(label));
                         this.saveToMemory(instruction, address);
@@ -93,14 +99,15 @@ public class Memory {
         }
     }
 
-    private static Integer tryParse(String text) {
-
-        if(text.startsWith("0x")) {
-            text = text.replace("0x", "\0").trim();
-        }
+    public static Integer tryParse(String text) {
 
         try {
-            return new Integer(text);
+            if(text.startsWith("0x")) {
+                text = text.replace("0x", "\0").trim();
+                return Integer.parseInt(text, 16);
+            } else {
+                return Integer.parseInt(text);
+            }
         } catch (NumberFormatException e) {
             return null;
         }

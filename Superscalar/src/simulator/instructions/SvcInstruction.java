@@ -26,7 +26,13 @@ public class SvcInstruction extends DecodedInstruction {
         for(int i = 0; i < registerFile.getCount(); i++) {
             Register register = registerFile.getRegister(i);
             int value = register.getValue();
-            System.out.println("R" + i + ": " + value);
+            System.out.print("R" + i + ": 0x" + Integer.toHexString(value).toUpperCase());
+
+            if((i + 1) % 4 == 0) {
+                System.out.print("\n");
+            } else {
+                System.out.print("\t\t");
+            }
         }
     }
 

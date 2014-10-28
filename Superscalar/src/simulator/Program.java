@@ -35,9 +35,9 @@ public class Program {
             }
 
             // If label line, parse next
-            if(line.endsWith(":")) {
+            if(line.contains(":")) {
 
-                String label = line;
+                String label = line.substring(0, line.indexOf(":") + 1);
                 line = bf.readLine();
 
                 // If there is no next, fail
