@@ -1,0 +1,3 @@
+#!/bin/sh
+mkdir -p build
+javac -sourcepath Superscalar/src/ -d build Superscalar/src/**/*.java

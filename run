@@ -1,0 +1,3 @@
+#!/bin/sh
+
+java -cp .:build:**/*.class simulator.Main $1
