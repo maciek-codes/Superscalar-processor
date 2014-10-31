@@ -1,9 +1,6 @@
 package simulator.instructions;
 
-import simulator.Memory;
-import simulator.Processor;
-import simulator.RegisterFile;
-import simulator.StatusRegister;
+import simulator.*;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -79,7 +76,10 @@ public class EncodedInstruction extends Instruction {
             return this.decodeCmp(registerFile);
         } else if(operand == Operand.BGE) {
             // Decode BGE - Branch - greater - equal
-            return this.decodeBranchGreaterEqual(processor.getStatusRegister());
+            return this.decodeBranchGreaterEqual(registerFile);
+        } else if(operand == Operand.BGT) {
+            // Decode BGT - Branch - greater - than
+            return this.decodeBranchGreaterThan(registerFile);
         } else if(operand == Operand.JMP) {
             // Decode JMP - Jump instruction
             return this.decodeJmp();
@@ -99,13 +99,17 @@ public class EncodedInstruction extends Instruction {
         return new JumpInstruction(address);
     }
 
-    private DecodedInstruction decodeBranchGreaterEqual(StatusRegister statusRegister) {
+    private DecodedInstruction decodeBranchGreaterEqual(RegisterFile registerFile) {
 
-        int address = this.getImmediateParam();
+        int[] args = this.getTwoArgValues(registerFile);
 
-        StatusRegister.Status status = statusRegister.getStatus();
+        return new BranchGreaterEqualInstruction(args);
+    }
 
-        return new BranchGreaterEqualInstruction(address, status);
+    private DecodedInstruction decodeBranchGreaterThan(RegisterFile registerFile) {
+        int[] args = this.getTwoArgValues(registerFile);
+
+        return new BranchGreaterThanInstruction(args);
     }
 
     /**
@@ -258,7 +262,7 @@ public class EncodedInstruction extends Instruction {
 
     private DecodedInstruction decodeCmp(RegisterFile registerFile) {
 
-        int[] args = this.getTwoArgValues(registerFile);
+        int[] args = this.getTreeParams(registerFile);
 
         return new CompareInstruction(args);
     }

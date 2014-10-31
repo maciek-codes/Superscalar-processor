@@ -38,7 +38,7 @@ public class MultiplyInstruction extends DecodedInstruction {
             throw new RuntimeException("Result not yet computed. Run execute() first.");
         }
 
-        // Write result to desination register
+        // Write result to destination register
         Register reg = processor.getRegisterFile().getRegister(this.desinationRegister);
         reg.setValue(this.result);
     }

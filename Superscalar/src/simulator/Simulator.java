@@ -17,10 +17,10 @@ public class Simulator {
     }
 
     // Run a simulation of execution of a program
-    public void Run(Program program) {
+    public void run(Program program, boolean isInteractive) {
 
         memory.LoadProgram(program);
 
-        processor.run();
+        processor.run(isInteractive);
     }
 }

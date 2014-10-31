@@ -17,29 +17,8 @@ public class SvcInstruction extends DecodedInstruction {
     public void execute(Processor processor) {
 
         processor.setRunning(false);
-
-        // Dump registers
-        final RegisterFile registerFile = processor.getRegisterFile();
-
-        System.out.println("Register file dump: ");
-
-        for(int i = 0; i < registerFile.getCount(); i++) {
-            Register register = registerFile.getRegister(i);
-            int value = register.getValue();
-            System.out.print("R" + i + ": 0x" + Integer.toHexString(value).toUpperCase());
-
-            if((i + 1) % 4 == 0) {
-                System.out.print("\n");
-            } else {
-                System.out.print("\t\t");
-            }
-        }
-
-        System.out.println("Memory dump: ");
-        for(int i = 0; i <processor.getMemory().getMaxAddress(); i += 0x4) {
-            System.out.println("Addr: 0x" + Integer.toHexString(i)
-                    + " " + processor.getMemory().getFromMemory(i).toString());
-        }
+        processor.dumpRegisterFile();
+        processor.dumpMemory();
     }
 
     @Override

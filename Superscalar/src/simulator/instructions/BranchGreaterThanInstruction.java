@@ -4,18 +4,17 @@ import simulator.Processor;
 import simulator.Status;
 
 /**
- * Created by Maciej Kumorek on 10/28/2014.
+ * Created by Maciej Kumorek on 10/31/2014.
  */
-public class BranchGreaterEqualInstruction extends DecodedInstruction {
+public class BranchGreaterThanInstruction extends DecodedInstruction {
+
 
     private final int addressToJump;
-
     private final Status statusRegisterValue;
+    private boolean shouldTakeBranch;
 
-    private boolean shouldTakeBranch = false;
-
-    public BranchGreaterEqualInstruction(int args[]) {
-        super(Operand.BGE);
+    public BranchGreaterThanInstruction(int[] args) {
+        super(Operand.BGT);
 
         // Get address to jump if success
         this.addressToJump = args[1];
@@ -24,12 +23,11 @@ public class BranchGreaterEqualInstruction extends DecodedInstruction {
         this.statusRegisterValue = Status.values()[args[0]];
     }
 
+
     @Override
     public void execute(Processor processor) {
-
         // Should take the branch?
-        if(this.statusRegisterValue == Status.EQ ||
-                this.statusRegisterValue == Status.GT) {
+        if(this.statusRegisterValue == Status.GT) {
             this.shouldTakeBranch = true;
         } else {
             this.shouldTakeBranch = false;
@@ -38,7 +36,6 @@ public class BranchGreaterEqualInstruction extends DecodedInstruction {
 
     @Override
     public void writeBack(Processor processor) {
-
         // Modify PC if branch should be taken
         if(this.shouldTakeBranch) {
             processor.getPc().setValue(this.addressToJump);

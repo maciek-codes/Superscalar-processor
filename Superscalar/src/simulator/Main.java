@@ -20,6 +20,12 @@ public class Main {
 
         String inputProgramName = args[0];
 
+        boolean isInteractive = false;
+
+        if(args.length >= 2 && args[1].equalsIgnoreCase("-i")) {
+            isInteractive = true;
+        }
+
         // Loaded program
         Program program;
 
@@ -36,6 +42,6 @@ public class Main {
         Simulator simulator = new Simulator();
 
         // Run the simulation
-        simulator.Run(program);
+        simulator.run(program, isInteractive);
     }
 }

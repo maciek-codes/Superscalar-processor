@@ -34,7 +34,7 @@ public abstract class Instruction {
      */
     protected Operand parseOperand(String instructionString) {
 
-        String string = instructionString.toLowerCase();
+        String string = instructionString.toLowerCase().trim();
 
         if (string.contains("add")) {
             return Operand.ADD;
@@ -54,21 +54,21 @@ public abstract class Instruction {
             return Operand.CMP;
         } else if(string.startsWith("bge ")) {
             return Operand.BGE;
-        } else if(string.startsWith("jmp ")) {
+        } else if(string.startsWith("bgt ")) {
+            return Operand.BGT;
+        } if(string.startsWith("jmp ")) {
             return Operand.JMP;
         }
 
         throw new RuntimeException("Unknown operand in string " + string);
     }
 
-
-
     public String getLabel() {
         return this.label;
     }
 
     public final String getEncodedInstruction() {
-        return this.encodedInstruction;
+        return this.encodedInstruction.trim();
     }
 
     public abstract DecodedInstruction decode(Processor processor);
