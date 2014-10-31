@@ -178,4 +178,8 @@ public class Processor {
 
         System.out.println("PC:\t0x" + Integer.toHexString(this.getPc().getValue()).toUpperCase());
     }
+
+    public boolean isInteractive() {
+        return this.isInteractive;
+    }
 }

@@ -56,6 +56,8 @@ public abstract class Instruction {
             return Operand.BGE;
         } else if(string.startsWith("bgt ")) {
             return Operand.BGT;
+        } else if(string.startsWith("beq ")) {
+            return Operand.BEQ;
         } if(string.startsWith("jmp ")) {
             return Operand.JMP;
         }

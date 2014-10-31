@@ -75,11 +75,14 @@ public class EncodedInstruction extends Instruction {
             // Decode CMP
             return this.decodeCmp(registerFile);
         } else if(operand == Operand.BGE) {
-            // Decode BGE - Branch - greater - equal
+            // Decode BGE - Branch if greater or equal
             return this.decodeBranchGreaterEqual(registerFile);
         } else if(operand == Operand.BGT) {
-            // Decode BGT - Branch - greater - than
+            // Decode BGT - Branch if greater - than
             return this.decodeBranchGreaterThan(registerFile);
+        } else if(operand == Operand.BEQ) {
+            // Decode BEQ - Branch if equal
+            return this.decodeBranchEqual(registerFile);
         } else if(operand == Operand.JMP) {
             // Decode JMP - Jump instruction
             return this.decodeJmp();
@@ -102,14 +105,17 @@ public class EncodedInstruction extends Instruction {
     private DecodedInstruction decodeBranchGreaterEqual(RegisterFile registerFile) {
 
         int[] args = this.getTwoArgValues(registerFile);
-
         return new BranchGreaterEqualInstruction(args);
     }
 
     private DecodedInstruction decodeBranchGreaterThan(RegisterFile registerFile) {
         int[] args = this.getTwoArgValues(registerFile);
-
         return new BranchGreaterThanInstruction(args);
+    }
+
+    private DecodedInstruction decodeBranchEqual(RegisterFile registerFile) {
+        int[] args = this.getTwoArgValues(registerFile);
+        return new BranchEqualInstruction(args);
     }
 
     /**

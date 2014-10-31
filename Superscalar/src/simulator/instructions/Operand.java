@@ -8,5 +8,5 @@ public enum Operand {
     ADD, SUB, MUL,
     LDM, STM,
     SVC,
-    CMP, BGE, BGT, JMP
+    CMP, BGE, BGT, BEQ, JMP
 }

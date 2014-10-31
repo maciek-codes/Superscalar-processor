@@ -17,6 +17,8 @@ public class Memory {
      */
     private ArrayList<Object> values;
 
+    private HashMap<String, Integer> labelsAddressMap;
+
     public Memory() {
         this.values = new ArrayList<Object>();
     }
@@ -51,7 +53,7 @@ public class Memory {
         int address = 0x0;
 
         // Store labels and addresses
-        HashMap<String, Integer> labelsAddressMap = new HashMap<String, Integer>();
+        labelsAddressMap = new HashMap<String, Integer>();
 
 
         // Load instructions
@@ -116,5 +118,18 @@ public class Memory {
 
     public int getMaxAddress() {
         return this.values.size() * 4;
+    }
+
+    public String addressToLabel(int addressToJump) {
+        if(labelsAddressMap != null && labelsAddressMap.containsValue(addressToJump)) {
+            for(String key : labelsAddressMap.keySet()) {
+                if (labelsAddressMap.get(key) == addressToJump) {
+                    return key;
+                }
+            }
+            return null;
+        } else {
+            return Integer.toHexString(addressToJump);
+        }
     }
 }
