@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="module_superscalar" default="compile.module.superscalar">
+  <dirname property="module.superscalar.basedir" file="${ant.file.module_superscalar}"/>
+  
+  <property name="module.jdk.home.superscalar" value="${project.jdk.home}"/>
+  <property name="module.jdk.bin.superscalar" value="${project.jdk.bin}"/>
+  <property name="module.jdk.classpath.superscalar" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.superscalar" value="-encoding UTF-8 -source 1.6 ${compiler.args}"/>
+  
+  <property name="superscalar.output.dir" value="${module.superscalar.basedir}/../../out/production/Superscalar"/>
+  <property name="superscalar.testoutput.dir" value="${module.superscalar.basedir}/../../out/test/Superscalar"/>
+  
+  <path id="superscalar.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="superscalar.module.production.classpath">
+    <path refid="${module.jdk.classpath.superscalar}"/>
+    <pathelement location="${idea.home}/lib/junit.jar"/>
+    <pathelement location="${idea.home}/lib/hamcrest-core-1.3.jar"/>
+    <pathelement location="${idea.home}/lib/hamcrest-library-1.3.jar"/>
+    <pathelement location="${idea.home}/lib/junit-4.11.jar"/>
+  </path>
+  
+  <path id="superscalar.runtime.production.module.classpath">
+    <pathelement location="${superscalar.output.dir}"/>
+    <pathelement location="${idea.home}/lib/junit.jar"/>
+    <pathelement location="${idea.home}/lib/hamcrest-core-1.3.jar"/>
+    <pathelement location="${idea.home}/lib/hamcrest-library-1.3.jar"/>
+    <pathelement location="${idea.home}/lib/junit-4.11.jar"/>
+  </path>
+  
+  <path id="superscalar.module.classpath">
+    <path refid="${module.jdk.classpath.superscalar}"/>
+    <pathelement location="${superscalar.output.dir}"/>
+    <pathelement location="${idea.home}/lib/junit.jar"/>
+    <pathelement location="${idea.home}/lib/hamcrest-core-1.3.jar"/>
+    <pathelement location="${idea.home}/lib/hamcrest-library-1.3.jar"/>
+    <pathelement location="${idea.home}/lib/junit-4.11.jar"/>
+  </path>
+  
+  <path id="superscalar.runtime.module.classpath">
+    <pathelement location="${superscalar.testoutput.dir}"/>
+    <pathelement location="${superscalar.output.dir}"/>
+    <pathelement location="${idea.home}/lib/junit.jar"/>
+    <pathelement location="${idea.home}/lib/hamcrest-core-1.3.jar"/>
+    <pathelement location="${idea.home}/lib/hamcrest-library-1.3.jar"/>
+    <pathelement location="${idea.home}/lib/junit-4.11.jar"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.superscalar">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <patternset id="excluded.from.compilation.superscalar">
+    <patternset refid="excluded.from.module.superscalar"/>
+  </patternset>
+  
+  <path id="superscalar.module.sourcepath">
+    <dirset dir="${module.superscalar.basedir}">
+      <include name="src"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.superscalar" depends="compile.module.superscalar.production,compile.module.superscalar.tests" description="Compile module Superscalar"/>
+  
+  <target name="compile.module.superscalar.production" depends="register.custom.compilers" description="Compile module Superscalar; production classes">
+    <mkdir dir="${superscalar.output.dir}"/>
+    <javac2 destdir="${superscalar.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.superscalar}/javac">
+      <compilerarg line="${compiler.args.superscalar}"/>
+      <bootclasspath refid="superscalar.module.bootclasspath"/>
+      <classpath refid="superscalar.module.production.classpath"/>
+      <src refid="superscalar.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.superscalar"/>
+    </javac2>
+    
+    <copy todir="${superscalar.output.dir}">
+      <fileset dir="${module.superscalar.basedir}/src">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="compile.module.superscalar.tests" depends="register.custom.compilers,compile.module.superscalar.production" description="compile module Superscalar; test classes" unless="skip.tests"/>
+  
+  <target name="clean.module.superscalar" description="cleanup module">
+    <delete dir="${superscalar.output.dir}"/>
+    <delete dir="${superscalar.testoutput.dir}"/>
+  </target>
+</project>

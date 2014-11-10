@@ -5,23 +5,14 @@ import simulator.Processor;
 /**
  * Created by Maciej Kumorek on 10/28/2014.
  */
-public class JumpInstruction extends DecodedInstruction {
+public class JumpInstruction extends BranchInstruction {
 
-    final int addressToJump;
-
-    public JumpInstruction(int address) {
-        super(Operand.JMP);
-
-        this.addressToJump = address;
+    public JumpInstruction(int address, EncodedInstruction encodedInstruction) {
+        super(Operand.JMP, new Integer[] { 0, address, null, null, null}, encodedInstruction);
     }
 
     @Override
-    public void execute(Processor processor) {
-
-    }
-
-    @Override
-    public void writeBack(Processor processor) {
-        processor.getPc().setValue(this.addressToJump);
+    protected boolean shouldTakeBranch() {
+        return true;
     }
 }

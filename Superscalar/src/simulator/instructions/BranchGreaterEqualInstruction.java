@@ -2,52 +2,25 @@ package simulator.instructions;
 
 import simulator.Processor;
 import simulator.Status;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Created by Maciej Kumorek on 10/28/2014.
  */
-public class BranchGreaterEqualInstruction extends DecodedInstruction {
+public class BranchGreaterEqualInstruction extends BranchInstruction {
 
-    private final int addressToJump;
-
-    private final Status statusRegisterValue;
-
-    private boolean shouldTakeBranch = false;
-
-    public BranchGreaterEqualInstruction(int args[]) {
-        super(Operand.BGE);
-
-        // Get address to jump if success
-        this.addressToJump = args[1];
-
-        // Get status register value
-        this.statusRegisterValue = Status.values()[args[0]];
+    public BranchGreaterEqualInstruction(Integer args[], EncodedInstruction encodedInstruction) {
+        super(Operand.BGE, args, encodedInstruction);
     }
 
     @Override
-    public void execute(Processor processor) {
-
+    protected boolean shouldTakeBranch() {
         // Should take the branch?
-        if(this.statusRegisterValue == Status.EQ ||
-                this.statusRegisterValue == Status.GT) {
-            this.shouldTakeBranch = true;
+        if(this.statusRegisterValue == Status.EQ
+                || this.statusRegisterValue == Status.GT) {
+            return true;
         } else {
-            this.shouldTakeBranch = false;
-        }
-    }
-
-    @Override
-    public void writeBack(Processor processor) {
-
-        // Modify PC if branch should be taken
-        if(this.shouldTakeBranch) {
-
-            if(processor.isInteractive()) {
-                // Find the label
-                String label = processor.getMemory().addressToLabel(this.addressToJump);
-                System.out.println("WRITE-BACK: BGE taking branch to " + label);
-            }
-            processor.getPc().setValue(this.addressToJump);
+            return false;
         }
     }
 }

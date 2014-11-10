@@ -9,23 +9,31 @@ import simulator.RegisterFile;
  */
 public class AddInstruction extends DecodedInstruction {
 
-    private final int desinationRegister;
+    private final int desinationRegisterNumber;
     private final int lhs;
     private final int rhs;
+    private final Integer firstSourceRegisterNumber;
+    private final Integer secondSourceRegisterNumber;
 
     private Integer result;
 
-    public AddInstruction(int[] args) {
-        super(Operand.ADD);
+    public AddInstruction(Integer[] args, EncodedInstruction encodedInstruction) {
+        super(Operand.ADD, encodedInstruction);
 
         // First argument is source register name
-        this.desinationRegister = args[0];
+        this.desinationRegisterNumber = args[0];
 
         // Second argument is first value to add
         this.lhs = args[1];
 
         // Third argument is second value to add
         this.rhs = args[2];
+
+        // First source register number
+        this.firstSourceRegisterNumber = args[3];
+
+        // Second source register number
+        this.secondSourceRegisterNumber = args[4];
     }
 
     @Override
@@ -44,7 +52,22 @@ public class AddInstruction extends DecodedInstruction {
 
         // Save to destination register
         final RegisterFile registerFile = processor.getRegisterFile();
-        final Register register = registerFile.getRegister(this.desinationRegister);
+        final Register register = registerFile.getRegister(this.desinationRegisterNumber);
         register.setValue(this.result);
+    }
+
+    @Override
+    public Integer getDestinationRegisterNumber() {
+        return this.desinationRegisterNumber;
+    }
+
+    @Override
+    public Integer getSecondSourceRegisterNumber() {
+        return this.secondSourceRegisterNumber;
+    }
+
+    @Override
+    public Integer getFirstSourceRegisterNumber() {
+        return this.firstSourceRegisterNumber;
     }
 }

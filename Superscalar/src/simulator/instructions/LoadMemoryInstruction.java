@@ -2,25 +2,28 @@ package simulator.instructions;
 
 import simulator.Processor;
 import simulator.Register;
-
-import java.util.Objects;
+import simulator.RegisterFile;
 
 /**
  * Created by Maciej Kumorek on 10/28/2014.
  */
 public class LoadMemoryInstruction extends DecodedInstruction {
 
-    private final int destinationRegister;
+    private final int destinationRegisterNumber;
     private final int offset;
     private final int address;
+    private final Integer firstSourceRegister;
+    private final Integer secondSourceRegister;
     private Integer result;
 
-    public LoadMemoryInstruction(int[] args) {
-        super(Operand.LDM);
+    public LoadMemoryInstruction(Integer[] args, EncodedInstruction encodedInstruction) {
+        super(Operand.LDM, encodedInstruction);
 
-        this.destinationRegister = args[0];
+        this.destinationRegisterNumber = args[0];
         this.offset = args[1];
         this.address = args[2];
+        this.firstSourceRegister = args[3];
+        this.secondSourceRegister = args[4];
     }
 
     @Override
@@ -28,7 +31,10 @@ public class LoadMemoryInstruction extends DecodedInstruction {
 
         // Do memory lookup
         int addressToLookup = this.address + this.offset;
+
+        //
         Object value = processor.getMemory().getFromMemory(addressToLookup);
+
         if(value.getClass() == Integer.class) {
             this.result = (Integer) value;
         }
@@ -37,8 +43,25 @@ public class LoadMemoryInstruction extends DecodedInstruction {
     @Override
     public void writeBack(Processor processor) {
 
-        Register reg = processor.getRegisterFile().getRegister(this.destinationRegister);
+        final RegisterFile registerFile = processor.getRegisterFile();
 
-        reg.setValue(this.result);
+        final Register register = registerFile.getRegister(this.destinationRegisterNumber);
+
+        register.setValue(this.result);
+    }
+
+    @Override
+    public Integer getDestinationRegisterNumber() {
+        return this.destinationRegisterNumber;
+    }
+
+    @Override
+    public Integer getSecondSourceRegisterNumber() {
+        return this.secondSourceRegister;
+    }
+
+    @Override
+    public Integer getFirstSourceRegisterNumber() {
+        return this.firstSourceRegister;
     }
 }

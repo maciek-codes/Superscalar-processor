@@ -6,39 +6,19 @@ import simulator.Status;
 /**
  * Created by Maciej Kumorek on 10/31/2014.
  */
-public class BranchGreaterThanInstruction extends DecodedInstruction {
+public class BranchGreaterThanInstruction extends BranchInstruction {
 
-
-    private final int addressToJump;
-    private final Status statusRegisterValue;
-    private boolean shouldTakeBranch;
-
-    public BranchGreaterThanInstruction(int[] args) {
-        super(Operand.BGT);
-
-        // Get address to jump if success
-        this.addressToJump = args[1];
-
-        // Get status register value
-        this.statusRegisterValue = Status.values()[args[0]];
+    public BranchGreaterThanInstruction(Integer[] args, EncodedInstruction encodedInstruction) {
+        super(Operand.BGT, args, encodedInstruction);
     }
 
-
     @Override
-    public void execute(Processor processor) {
+    protected boolean shouldTakeBranch() {
         // Should take the branch?
         if(this.statusRegisterValue == Status.GT) {
-            this.shouldTakeBranch = true;
+            return true;
         } else {
-            this.shouldTakeBranch = false;
-        }
-    }
-
-    @Override
-    public void writeBack(Processor processor) {
-        // Modify PC if branch should be taken
-        if(this.shouldTakeBranch) {
-            processor.getPc().setValue(this.addressToJump);
+            return false;
         }
     }
 }

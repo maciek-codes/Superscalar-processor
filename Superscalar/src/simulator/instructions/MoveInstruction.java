@@ -14,12 +14,18 @@ public class MoveInstruction extends DecodedInstruction {
      */
     final private int value;
 
-    final private int desinationRegister;
+    final private int destinationRegisterNumber;
 
-    public MoveInstruction(int desinationRegister, int value) {
-        super(Operand.MOV);
+    final private Integer sourceRegisterNumber;
+
+    public MoveInstruction(int destinationRegisterNumber,
+                           Integer sourceRegisterNumber,
+                           int value,
+                           EncodedInstruction encodedInstruction) {
+        super(Operand.MOV, encodedInstruction);
         this.value = value;
-        this.desinationRegister = desinationRegister;
+        this.sourceRegisterNumber = sourceRegisterNumber;
+        this.destinationRegisterNumber = destinationRegisterNumber;
     }
 
     /**
@@ -34,8 +40,31 @@ public class MoveInstruction extends DecodedInstruction {
 
     public void writeBack(Processor processor) {
 
+        // Get register file
+        final RegisterFile registerFile = processor.getRegisterFile();
+
         // Store value in destination register
-        Register register = processor.getRegisterFile().getRegister(this.desinationRegister);
+        Register register = registerFile.getRegister(this.destinationRegisterNumber);
+
+        // Update the value
         register.setValue(this.value);
+    }
+
+    @Override
+    public Integer getDestinationRegisterNumber() {
+        return this.destinationRegisterNumber;
+    }
+
+    //
+    @Override
+    public Integer getSecondSourceRegisterNumber() {
+
+        // Move never has second register as parameter
+        return null;
+    }
+
+    @Override
+    public Integer getFirstSourceRegisterNumber() {
+        return this.sourceRegisterNumber;
     }
 }

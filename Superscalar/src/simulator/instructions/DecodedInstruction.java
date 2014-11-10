@@ -1,6 +1,7 @@
 package simulator.instructions;
 
 import simulator.Processor;
+import simulator.Register;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -12,8 +13,12 @@ public abstract class DecodedInstruction {
 
     protected Operand op;
 
-    public DecodedInstruction(Operand op) {
+    // Original instruction
+    private EncodedInstruction encodedInstruction;
+
+    public DecodedInstruction(Operand op, EncodedInstruction encodedInstruction) {
         this.op = op;
+        this.encodedInstruction = encodedInstruction;
     }
 
     public abstract void execute(Processor processor);
@@ -43,4 +48,14 @@ public abstract class DecodedInstruction {
 
         return Integer.parseInt(matcher.group(0));
     }
+
+    public String getEncodedInstruction() {
+        return encodedInstruction.getEncodedInstruction();
+    }
+
+    public abstract Integer getDestinationRegisterNumber();
+
+    public abstract Integer getSecondSourceRegisterNumber();
+
+    public abstract Integer getFirstSourceRegisterNumber();
 }

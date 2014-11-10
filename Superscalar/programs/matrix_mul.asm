@@ -9,8 +9,8 @@ forloop:
     MUL r3, r0, 0x4		; align to next byte
     LDM r1, r3, arrayB	; load B[i]
     LDM r2, r3, arrayC	; load C[i]
-    ADD r1, r1, r2		; B[i] + C[i]
-    STM r1, r3, arrayA	; Store at A[i] => A[i] = B[i] + C[i]
+    MUL r1, r1, r2		; B[i] * C[i]
+    STM r1, r3, arrayA	; Store at A[i] => A[i] = B[i] * C[i]
     ADD r0, r0, 0x1		; i = i + 1
     JMP forloop			;
 end:

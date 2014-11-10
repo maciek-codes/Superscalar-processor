@@ -9,8 +9,8 @@ import simulator.RegisterFile;
  */
 public class SvcInstruction extends DecodedInstruction {
 
-    public SvcInstruction(Operand op) {
-        super(op);
+    public SvcInstruction(Operand op, EncodedInstruction encodedInstruction) {
+        super(op, encodedInstruction);
     }
 
     @Override
@@ -24,5 +24,20 @@ public class SvcInstruction extends DecodedInstruction {
     @Override
     public void writeBack(Processor processor) {
         return;
+    }
+
+    @Override
+    public Integer getDestinationRegisterNumber() {
+        return null;
+    }
+
+    @Override
+    public Integer getSecondSourceRegisterNumber() {
+        return null;
+    }
+
+    @Override
+    public Integer getFirstSourceRegisterNumber() {
+        return null;
     }
 }
