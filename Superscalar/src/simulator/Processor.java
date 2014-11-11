@@ -196,9 +196,9 @@ public class Processor {
                 this.instructionsToDecode.clear();
 
                 if(branchInstruction.getOperand() != Operand.JMP) {
-                    this.instructionsToExecute.clear();
+	            this.instructionsToExecute.clear();
                     this.instructionsToWriteBack.clear();
-                }
+                } 
                 return;
             }
         } else {

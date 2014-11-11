@@ -2,7 +2,6 @@ package simulator.instructions;
 
 import simulator.Processor;
 import simulator.Status;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Created by Maciej Kumorek on 10/28/2014.
