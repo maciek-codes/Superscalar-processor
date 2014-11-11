@@ -12,20 +12,19 @@ public class MoveInstruction extends DecodedInstruction {
     /**
      * Value to be moved
      */
-    final private int value;
+    final private int valueToMov;
 
     final private int destinationRegisterNumber;
 
     final private Integer sourceRegisterNumber;
 
-    public MoveInstruction(int destinationRegisterNumber,
-                           Integer sourceRegisterNumber,
-                           int value,
-                           EncodedInstruction encodedInstruction) {
+    public MoveInstruction(Integer[] args, EncodedInstruction encodedInstruction) {
         super(Operand.MOV, encodedInstruction);
-        this.value = value;
-        this.sourceRegisterNumber = sourceRegisterNumber;
-        this.destinationRegisterNumber = destinationRegisterNumber;
+        
+        // Use number not value
+        this.destinationRegisterNumber = args[2];
+        this.valueToMov = args[1];
+        this.sourceRegisterNumber = args[3];
     }
 
     /**
@@ -47,7 +46,7 @@ public class MoveInstruction extends DecodedInstruction {
         Register register = registerFile.getRegister(this.destinationRegisterNumber);
 
         // Update the value
-        register.setValue(this.value);
+        register.setValue(this.valueToMov);
     }
 
     @Override

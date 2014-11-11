@@ -260,13 +260,33 @@ public class EncodedInstruction extends Instruction {
      * @return
      */
     private DecodedInstruction decodeStoreMemory(RegisterFile registerFile) {
-        Integer[] args = this.getTreeParams(registerFile);
+        Integer[] threeArgs = this.getTreeParams(registerFile);
+        Integer[] args = new Integer[threeArgs.length + 2];
+
+        // No destination register
+        args[0] = null;
 
         // Actually first register is not destination, so we need to get its value rather than number
-        int registerNumber = args[0];
-        args[0] = registerFile.getRegister(registerNumber).getValue();
+        args[1] = registerFile.getRegister(threeArgs[0]).getValue();
+        args[4] = threeArgs[0];
+
+        args[2] = threeArgs[1];
+        args[5] = threeArgs[3];
+
+        args[3] = threeArgs[2];
+        args[6] = threeArgs[4];
+
+        
+        System.out.println("DECODE: STM will get " + args[1] + " from register r" + args[4]);
 
         return new StoreMemoryInstruction(args, this);
+    }
+
+    private DecodedInstruction decodeMov(RegisterFile registerFile) {
+
+        Integer[] args = this.getTwoArgValues(registerFile);
+
+        return new MoveInstruction(args, this);
     }
 
     private DecodedInstruction decodeCmp(RegisterFile registerFile) {
@@ -320,42 +340,5 @@ public class EncodedInstruction extends Instruction {
         }
 
         return args;
-    }
-
-    private DecodedInstruction decodeMov(RegisterFile registerFile) {
-
-        // Get destination register
-        Matcher matcher = registerPattern.matcher(this.getEncodedInstruction());
-        String destinationRegisterName, sourceRegisterName;
-        int destinationRegisterNumber = -1;
-
-        if(matcher.find()) {
-            destinationRegisterName = matcher.group(0);
-            destinationRegisterNumber = this.getRegisterNumberFromString(destinationRegisterName);
-        } else {
-
-            // Destination must be specified
-            throw new RuntimeException("Destination register not specified in instruction: "
-                    + this.getEncodedInstruction());
-        }
-
-        // Get second register or immediate value
-        if(matcher.find()) {
-            sourceRegisterName = matcher.group(0);
-            int sourceRegisterNumber = this.getRegisterNumberFromString(sourceRegisterName);
-            int valueInRegister = registerFile.getRegister(sourceRegisterNumber).getValue();
-            return new MoveInstruction(destinationRegisterNumber, sourceRegisterNumber, valueInRegister, this);
-        }
-
-        // Try to get immediate value
-        Matcher intermediateValMatcher = interValPattern.matcher(this.getEncodedInstruction());
-
-        if(intermediateValMatcher.find()) {
-            int immediateValue = getImmediateValueFromString(intermediateValMatcher);
-            return new MoveInstruction(destinationRegisterNumber, null, immediateValue, this);
-        }
-
-        // Else give up
-        throw new RuntimeException("Cannot decode MOV instruction: " + this.getEncodedInstruction());
     }
 }
