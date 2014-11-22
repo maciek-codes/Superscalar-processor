@@ -1,6 +1,6 @@
-package simulator.instructions;
+package org.mk0934.simulator.instructions;
 
-import simulator.Processor;
+import org.mk0934.simulator.Processor;
 
 /**
  * Created by Maciej Kumorek on 10/28/2014.

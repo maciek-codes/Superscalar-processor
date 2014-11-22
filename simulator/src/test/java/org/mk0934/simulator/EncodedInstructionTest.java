@@ -1,18 +1,25 @@
-package simulator.tests;
+package org.mk0934.simulator;
 
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
-import simulator.Memory;
-import simulator.Processor;
-import simulator.RegisterFile;
-import simulator.instructions.DecodedInstruction;
-import simulator.instructions.Instruction;
-import simulator.instructions.EncodedInstruction;
-import simulator.instructions.Operand;
+import org.junit.Ignore;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
-import static org.junit.Assert.*;
+import org.mk0934.simulator.Memory;
+import org.mk0934.simulator.Processor;
+import org.mk0934.simulator.RegisterFile;
+import org.mk0934.simulator.instructions.DecodedInstruction;
+import org.mk0934.simulator.instructions.Instruction;
+import org.mk0934.simulator.instructions.EncodedInstruction;
+import org.mk0934.simulator.instructions.Operand;
 
 public class EncodedInstructionTest {
 
+
+    /**
+    *   Test case for add
+    */
     @Test
     public void testParseAddOperand() {
 
@@ -25,6 +32,9 @@ public class EncodedInstructionTest {
         assertEquals("ADD operand not parsed", expectedOperand, decodedInstruction.getOperand());
     }
 
+    /**
+    *   Test case for ignoring comments in assmebly file
+    */
     @Test
     public void ignoresComment() {
         String rawInput = "SUB r0, r0, r1 ; commment to ignore";
@@ -32,6 +42,9 @@ public class EncodedInstructionTest {
         assertEquals("Comment not ignored", "SUB r0, r0, r1", instruction.getEncodedInstruction());
     }
 
+    /**
+    *   Test case for ignoring comments in assmebly file
+    */
     @Test
     public void instructionCanHaveLabel() {
         String instructionString = "MUL r0, r0, r1";

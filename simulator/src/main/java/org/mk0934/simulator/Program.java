@@ -1,8 +1,8 @@
 package org.mk0934.simulator;
 
-import simulator.instructions.DecodedInstruction;
-import simulator.instructions.EncodedInstruction;
-import simulator.instructions.Instruction;
+import org.mk0934.simulator.instructions.DecodedInstruction;
+import org.mk0934.simulator.instructions.EncodedInstruction;
+import org.mk0934.simulator.instructions.Instruction;
 
 import java.io.*;
 import java.util.ArrayList;

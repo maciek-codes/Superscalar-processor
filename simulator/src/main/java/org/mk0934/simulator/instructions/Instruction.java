@@ -1,7 +1,7 @@
-package simulator.instructions;
+package org.mk0934.simulator.instructions;
 
-import simulator.Processor;
-import simulator.RegisterFile;
+import org.mk0934.simulator.Processor;
+import org.mk0934.simulator.RegisterFile;
 
 import java.util.Objects;
 

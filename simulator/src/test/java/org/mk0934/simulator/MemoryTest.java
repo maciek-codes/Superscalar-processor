@@ -1,17 +1,15 @@
-package simulator.tests;
+package org.mk0934.simulator;
 
-import org.junit.Before;
+
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
-import simulator.Memory;
-
-import static org.junit.Assert.*;
+import org.junit.Ignore;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import org.mk0934.simulator.Memory;
 
 public class MemoryTest {
-
-    @Before
-    public void setUp() throws Exception {
-
-    }
 
     @Test
     public void testSaveToMemory() {

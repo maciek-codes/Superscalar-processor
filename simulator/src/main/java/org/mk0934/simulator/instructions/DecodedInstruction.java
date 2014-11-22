@@ -1,7 +1,7 @@
-package simulator.instructions;
+package org.mk0934.simulator.instructions;
 
-import simulator.Processor;
-import simulator.Register;
+import org.mk0934.simulator.Processor;
+import org.mk0934.simulator.Register;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

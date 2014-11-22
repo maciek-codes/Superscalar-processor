@@ -1,6 +1,6 @@
-package simulator.instructions;
+package org.mk0934.simulator.instructions;
 
-import simulator.*;
+import org.mk0934.simulator.*;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

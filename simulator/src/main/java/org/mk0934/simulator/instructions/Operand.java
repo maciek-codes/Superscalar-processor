@@ -1,4 +1,4 @@
-package simulator.instructions;
+package org.mk0934.simulator.instructions;
 
 /**
  * Instruction operands

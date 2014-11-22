@@ -1,9 +1,9 @@
-package simulator.instructions;
+package org.mk0934.simulator.instructions;
 
-import simulator.Processor;
-import simulator.Register;
-import simulator.RegisterFile;
-import simulator.Status;
+import org.mk0934.simulator.Processor;
+import org.mk0934.simulator.Register;
+import org.mk0934.simulator.RegisterFile;
+import org.mk0934.simulator.Status;
 
 /**
  * Created by Maciej Kumorek on 10/28/2014.
