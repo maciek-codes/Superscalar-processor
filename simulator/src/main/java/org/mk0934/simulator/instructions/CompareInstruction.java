@@ -14,7 +14,7 @@ public class CompareInstruction extends DecodedInstruction {
     private final int rhs;
     private final int destinationRegisterNumber;
     private final Integer firstSourceRegisterNumber;
-    private final Integer secondSourceRegisterNumer;
+    private final Integer secondSourceRegisterNumber;
 
     private Status statusToWrite;
 
@@ -25,7 +25,7 @@ public class CompareInstruction extends DecodedInstruction {
         this.lhs = args[1];
         this.rhs = args[2];
         this.firstSourceRegisterNumber = args[3];
-        this.secondSourceRegisterNumer = args[4];
+        this.secondSourceRegisterNumber = args[4];
     }
 
     @Override
@@ -56,7 +56,7 @@ public class CompareInstruction extends DecodedInstruction {
 
     @Override
     public Integer getSecondSourceRegisterNumber() {
-        return this.secondSourceRegisterNumer;
+        return this.secondSourceRegisterNubmer;
     }
 
     @Override
