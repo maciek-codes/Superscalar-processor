@@ -1,7 +1,7 @@
 package org.mk0934.simulator;
 
-import simulator.instructions.EncodedInstruction;
-import simulator.instructions.Instruction;
+import org.mk0934.simulator.instructions.EncodedInstruction;
+import org.mk0934.simulator.instructions.Instruction;
 
 import java.util.ArrayList;
 import java.util.HashMap;

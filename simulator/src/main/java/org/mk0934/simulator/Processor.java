@@ -1,9 +1,9 @@
 package org.mk0934.simulator;
 
-import simulator.instructions.BranchInstruction;
-import simulator.instructions.DecodedInstruction;
-import simulator.instructions.EncodedInstruction;
-import simulator.instructions.Operand;
+import org.mk0934.simulator.instructions.BranchInstruction;
+import org.mk0934.simulator.instructions.DecodedInstruction;
+import org.mk0934.simulator.instructions.EncodedInstruction;
+import org.mk0934.simulator.instructions.Operand;
 
 import java.util.LinkedList;
 
