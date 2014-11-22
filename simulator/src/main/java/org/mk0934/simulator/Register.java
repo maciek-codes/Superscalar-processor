@@ -1,4 +1,4 @@
-package simulator;
+package org.mk0934.simulator;
 
 /**
  * Created by Maciej Kumorek on 9/30/2014.

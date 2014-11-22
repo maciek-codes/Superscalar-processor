@@ -1,4 +1,4 @@
-package simulator;
+package org.mk0934.simulator;
 
 import simulator.instructions.EncodedInstruction;
 import simulator.instructions.Instruction;
