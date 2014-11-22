@@ -1,9 +1,6 @@
 package org.mk0934.simulator;
 
-import org.mk0934.simulator.instructions.BranchInstruction;
-import org.mk0934.simulator.instructions.DecodedInstruction;
-import org.mk0934.simulator.instructions.EncodedInstruction;
-import org.mk0934.simulator.instructions.Operand;
+import org.mk0934.simulator.instructions.*;
 
 import java.util.LinkedList;
 
@@ -11,6 +8,8 @@ import java.util.LinkedList;
  * Created by Maciej Kumorek on 9/30/2014.
  */
 public class Processor {
+
+    private final int EXECUTION_UNITS_NUM = 2;
 
     /**
      * Register file in the processor
@@ -31,14 +30,23 @@ public class Processor {
      * Flag indicating if the execution should continue
      */
     private boolean isRunning;
-    private boolean isInteractive;
 
     /**
      * Buffers
      */
-    private LinkedList<DecodedInstruction> instructionsToExecute;
+    private LinkedList<DecodedInstruction> instructionsToExecute[];
     private LinkedList<EncodedInstruction> instructionsToDecode;
-    private LinkedList<DecodedInstruction> instructionsToWriteBack;
+    private LinkedList<DecodedInstruction> instructionsToWriteBack[];
+
+    /**
+     * Execution units
+     */
+    private ExecutionUnit executionUnits[];
+
+    /**
+     * Write-back units
+     */
+    private WriteBackUnit writebackUnits[];
 
     /**
      * Creates new processor
@@ -48,38 +56,57 @@ public class Processor {
         this.mainMemory = memory;
         this.pc.setValue(0x0);
         this.registerFile = new RegisterFile();
-        this.instructionsToExecute = new LinkedList<DecodedInstruction>();
+        this.instructionsToExecute = new LinkedList[EXECUTION_UNITS_NUM];
         this.instructionsToDecode = new LinkedList<EncodedInstruction>();
-        this.instructionsToWriteBack = new LinkedList<DecodedInstruction>();
+        this.instructionsToWriteBack = new LinkedList[EXECUTION_UNITS_NUM];
+
+        this.executionUnits = new ExecutionUnit[EXECUTION_UNITS_NUM];
+        this.writebackUnits = new WriteBackUnit[EXECUTION_UNITS_NUM];
+
+        // Initialize buffers
+        for(int i = 0; i < EXECUTION_UNITS_NUM; i++) {
+            this.instructionsToExecute[i] = new LinkedList<>();
+            this.instructionsToWriteBack[i] = new LinkedList<>();
+            this.executionUnits[i] = new ExecutionUnit(instructionsToExecute[i], instructionsToWriteBack[i], this, i);
+            this.writebackUnits[i] = new WriteBackUnit(instructionsToWriteBack[i], this, i);
+        }
     }
 
-    public void run(boolean isInteractive) {
+    /**
+     * Run the processor simulation
+     */
+    public void run() {
 
         this.isRunning = true;
-        this.isInteractive = isInteractive;
         int cycles = 0;
         while(this.isRunning) {
 
+            Utilities.log("Cycle #" + cycles);
 
-            if(this.isInteractive) {
-                System.out.println("Cycle #" + cycles);
+            // Write-back
+            for(int i = 0; i < EXECUTION_UNITS_NUM; i++) {
+                this.writebackUnits[i].writeBack();
             }
 
-            this.writeBack();
-            this.execute();
+            // Execute
+            for(int i = 0; i < EXECUTION_UNITS_NUM; i++) {
+                executionUnits[i].execute();
+            }
+
+            // Decode
             this.decode();
+
+            // Fetch
             this.fetch();
 
             cycles++;
 
-            if(this.isInteractive) {
+            if(Globals.IsInteractive) {
                 this.dumpRegisterFile();
             }
         }
 
-        if(this.isInteractive) {
-            System.out.println("Total cycles #" + cycles);
-        }
+        System.out.println("Total cycles #" + cycles);
     }
 
     /**
@@ -97,15 +124,13 @@ public class Processor {
         } catch (ClassCastException ex) {
 
             // We reached memory that isn't instructions
-            if(this.isInteractive) {
+            if(Globals.IsInteractive) {
                 System.out.println("FETCH: nothing to do");
             }
             return;
         }
 
-
-
-        if(this.isInteractive) {
+        if(Globals.IsInteractive) {
             System.out.println("FETCH: Fetched " + currentEncodedInstruction.getEncodedInstruction()
                     + " at address " + Integer.toHexString(currentPcValue));
         }
@@ -113,7 +138,7 @@ public class Processor {
         // Increment PC
         this.pc.setValue(currentPcValue + 0x4);
 
-        if(this.isInteractive) {
+        if(Globals.IsInteractive) {
             System.out.println("FETCH: Incremented PC to " + Integer.toHexString(this.pc.getValue()));
         }
 
@@ -126,7 +151,7 @@ public class Processor {
     private void decode() {
 
         if(this.instructionsToDecode.isEmpty()) {
-            if(this.isInteractive) {
+            if(Globals.IsInteractive) {
                 System.out.println("DECODE: nothing to do");
             }
             return;
@@ -134,7 +159,7 @@ public class Processor {
 
         EncodedInstruction currentEncodedInstruction = this.instructionsToDecode.removeFirst();
 
-        if(this.isInteractive) {
+        if(Globals.IsInteractive) {
             System.out.println("DECODE: Decoding " + currentEncodedInstruction.getEncodedInstruction());
         }
 
@@ -144,7 +169,7 @@ public class Processor {
         Integer sourceRegister2 = currentInstruction.getSecondSourceRegisterNumber();
 
         // Check if there is a dependency
-        for(DecodedInstruction instruction : this.instructionsToExecute) {
+        for(DecodedInstruction instruction : this.instructionsToExecute[0]) {
 
             Integer destinationRegister = instruction.getDestinationRegisterNumber();
 
@@ -163,7 +188,7 @@ public class Processor {
             }
         }
 
-        for(DecodedInstruction instruction : this.instructionsToWriteBack) {
+        for(DecodedInstruction instruction : this.instructionsToWriteBack[0]) {
 
             Integer destinationRegister = instruction.getDestinationRegisterNumber();
 
@@ -188,7 +213,7 @@ public class Processor {
 
             if(branchInstruction.tryTakeBranch(this)) {
 
-                if(this.isInteractive) {
+                if(Globals.IsInteractive) {
                     System.out.println("DECODE: Branch to " + branchInstruction.getAddressToMove());
                 }
 
@@ -196,61 +221,15 @@ public class Processor {
                 this.instructionsToDecode.clear();
 
                 if(branchInstruction.getOperand() != Operand.JMP) {
-	               this.instructionsToExecute.clear();
-                   this.instructionsToWriteBack.clear();
+	               this.instructionsToExecute[0].clear();
+                   this.instructionsToWriteBack[0].clear();
                 } 
                 return;
             }
         } else {
             // Add to the buffer
-            this.instructionsToExecute.addLast(currentInstruction);
+            this.instructionsToExecute[0].addLast(currentInstruction);
         }
-    }
-
-    /**
-     * Execute
-     */
-    private void execute() {
-
-        if(this.instructionsToExecute.isEmpty()) {
-            if(this.isInteractive) {
-                System.out.println("EXECUTE: nothing to do");
-            }
-            return;
-        }
-
-        DecodedInstruction instruction = this.instructionsToExecute.removeFirst();
-
-        if(this.isInteractive) {
-            System.out.println("EXECUTE: Executing " + instruction.getEncodedInstruction());
-        }
-
-        instruction.execute(this);
-
-        this.instructionsToWriteBack.addLast(instruction);
-    }
-
-    /**
-     * Write back
-     */
-    private void writeBack() {
-
-        if(this.instructionsToWriteBack.isEmpty()) {
-
-            // We reached memory that isn't instructions
-            if(this.isInteractive) {
-                System.out.println("WRBCK: nothing to do");
-            }
-            return;
-        }
-
-        DecodedInstruction instruction = this.instructionsToWriteBack.removeFirst();
-
-        if(this.isInteractive) {
-            System.out.println("WRBCK: Writing back " + instruction.getEncodedInstruction());
-        }
-
-        instruction.writeBack(this);
     }
 
     /**
@@ -262,7 +241,7 @@ public class Processor {
     }
 
     /**
-     * Getter for register file
+     * Gets the register file
      * @return
      */
     public final RegisterFile getRegisterFile() {
@@ -307,9 +286,5 @@ public class Processor {
         }
 
         System.out.println("PC:\t0x" + Integer.toHexString(this.getPc().getValue()).toUpperCase());
-    }
-
-    public boolean isInteractive() {
-        return this.isInteractive;
     }
 }

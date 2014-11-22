@@ -18,11 +18,11 @@ public class Simulator {
     }
 
     // Run a simulation of execution of a program
-    public void run(Program program, boolean isInteractive) {
+    public void run(Program program) {
 
         // First load program into the memory
         memory.LoadProgram(program);
 
-        processor.run(isInteractive);
+        processor.run();
     }
 }

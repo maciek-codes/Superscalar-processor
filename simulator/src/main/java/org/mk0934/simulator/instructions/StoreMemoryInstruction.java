@@ -1,5 +1,6 @@
 package org.mk0934.simulator.instructions;
 
+import org.mk0934.simulator.Globals;
 import org.mk0934.simulator.Processor;
 
 /**
@@ -35,7 +36,7 @@ public class StoreMemoryInstruction extends DecodedInstruction {
     @Override
     public void writeBack(Processor processor) {
        
-        if(processor.isInteractive()) {
+        if(Globals.IsInteractive) {
             System.out.println("Storing at " + this.valueToStore 
                 + " address " + Integer.toHexString(this.addressToStore));
         }
