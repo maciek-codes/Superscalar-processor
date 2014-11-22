@@ -56,7 +56,7 @@ public class CompareInstruction extends DecodedInstruction {
 
     @Override
     public Integer getSecondSourceRegisterNumber() {
-        return this.secondSourceRegisterNubmer;
+        return this.secondSourceRegisterNumber;
     }
 
     @Override
