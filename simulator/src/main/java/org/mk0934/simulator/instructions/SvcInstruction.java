@@ -17,7 +17,7 @@ public class SvcInstruction extends DecodedInstruction {
     public void execute(Processor processor) {
 
         processor.setRunning(false);
-        processor.dumpRegisterFile();
+        processor.dumpRegisterFile(false);
         processor.dumpMemory();
     }
 

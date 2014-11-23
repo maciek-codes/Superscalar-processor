@@ -10,7 +10,7 @@ public class Utilities {
      * Print log message if in interactive mode
      */
     public static void log(String text) {
-        if(!Globals.IsInteractive) {
+        if(!Globals.IsVerbose) {
             return;
         }
 

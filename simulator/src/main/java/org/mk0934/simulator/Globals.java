@@ -6,7 +6,12 @@ package org.mk0934.simulator;
 public class Globals {
 
     /**
-     * Is simulation interactive?
+     * Should simulator print all messages
+     */
+    public static boolean IsVerbose = false;
+
+    /**
+     * Should simulation be run in interactive mode
      */
     public static boolean IsInteractive = false;
 }

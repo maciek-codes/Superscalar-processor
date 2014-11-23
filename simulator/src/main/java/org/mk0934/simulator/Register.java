@@ -9,6 +9,7 @@ public class Register {
      * Value held in the register
      */
     private int value;
+    private boolean dirty;
 
     /**
      * Initializes the register
@@ -23,5 +24,14 @@ public class Register {
 
     public void setValue(int newValue) {
         this.value = newValue;
+        this.setDirty(true);
+    }
+
+    public boolean getDirty() {
+        return this.dirty;
+    }
+
+    public void setDirty(boolean dirty) {
+        this.dirty = dirty;
     }
 }

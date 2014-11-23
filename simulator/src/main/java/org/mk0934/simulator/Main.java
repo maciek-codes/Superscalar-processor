@@ -13,6 +13,8 @@ public class Main {
      */
     public static void main(String[] args) {
 
+        Configuration configuration = new Configuration();
+
         if(args.length < 1) {
             System.out.println("Please specify input program as the parameter.");
             return;
@@ -20,8 +22,8 @@ public class Main {
 
         String inputProgramName = args[0];
 
-        if(args.length >= 2 && args[1].equalsIgnoreCase("-i")) {
-            Globals.IsInteractive = true;
+        for(int i = 1; i < args.length; i++) {
+            configuration.parseConfigurationOption(args[i]);
         }
 
         // Loaded program

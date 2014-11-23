@@ -1,10 +1,13 @@
 package org.mk0934.simulator;
 
-import com.sun.webpane.sg.prism.UtilitiesImpl;
-import org.mk0934.simulator.instructions.*;
+import org.mk0934.simulator.instructions.BranchInstruction;
+import org.mk0934.simulator.instructions.DecodedInstruction;
+import org.mk0934.simulator.instructions.EncodedInstruction;
+import org.mk0934.simulator.instructions.Operand;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Scanner;
 
 /**
  * Created by Maciej Kumorek on 9/30/2014.
@@ -89,8 +92,45 @@ public class Processor {
      */
     public void run() {
 
+        int cycleToJumpTo = -1;
+
         this.isRunning = true;
         while(this.isRunning) {
+
+            // Set register dirty flag to false
+            this.registerFile.commit();
+
+            // Increment cycles
+            cycles++;
+
+            if(Globals.IsInteractive) {
+                boolean gettingCommands = true;
+
+                Scanner keyboard = new Scanner(System.in);
+                while(gettingCommands && (cycles == cycleToJumpTo || cycleToJumpTo < 0) ) {
+                    // Reset the 'break-point'
+                    cycleToJumpTo = -1;
+                    String inputLine = keyboard.nextLine().trim().toLowerCase();
+
+                    if (inputLine.equals("c") || inputLine.equals("continue")) {
+                        // Continue
+                        gettingCommands = false;
+                        Globals.IsInteractive = false;
+                    } else if(inputLine.equals("n") || inputLine.equals("next")) {
+                        gettingCommands = false;
+                    } else if(inputLine.startsWith("i ") || inputLine.startsWith("info ")){
+                        if(inputLine.contains(" r")) {
+                            int registerNumber = Integer.parseInt(inputLine.replaceAll("[^0-9]", ""));
+                            System.out.println(String.format("R%d: 0x%x", registerNumber,
+                                    this.registerFile.getRegister(registerNumber).getValue()));
+                        } else if(inputLine.contains(" mem")) {
+                            this.dumpMemory();
+                        }
+                    } else if(inputLine.startsWith("j ") || inputLine.startsWith("jump ")) {
+                        cycleToJumpTo = Integer.parseInt(inputLine.replaceAll("[^0-9]", ""));
+                    }
+                }
+            }
 
             Utilities.log("Cycle #" + cycles);
 
@@ -104,6 +144,11 @@ public class Processor {
                 executionUnits[i].execute();
             }
 
+            // Execution unit could have terminated
+            if(!this.isRunning) {
+                break;
+            }
+
             // Decode
             boolean decodedFirst = this.decode(0);
             if(decodedFirst) {
@@ -112,14 +157,13 @@ public class Processor {
             }
 
             // Fetch
-            this.fetch();
-
-            cycles++;
-
-            if(Globals.IsInteractive) {
-                this.dumpRegisterFile();
+            for(int i = 0; i < EXECUTION_UNITS_NUM; i++) {
+                this.fetch(i);
             }
 
+            if(Globals.IsVerbose) {
+                this.dumpRegisterFile(true);
+            }
 
             if(areQueuesEmpty()) {
                 isRunning = false;
@@ -156,11 +200,22 @@ public class Processor {
 
     /**
      * Fetch stage
+     * @param unitId Fetch unit id
      */
-    private void fetch() {
+    private void fetch(int unitId) {
+
+        String tag = String.format("FETCH(%d)", unitId);
 
         // Get the PC value
         int currentPcValue = this.pc.getValue();
+
+        // Is buffer full?
+        // Make sure we have enough instructions to decode later on
+        if(instructionsToDecode.size() > EXECUTION_UNITS_NUM) {
+            // We reached memory that isn't instructions
+            Utilities.log(tag, "Instruction buffer full. Skipping.");
+            return;
+        }
 
         // Encoded instruction we will try to fetch fom the memory
         EncodedInstruction currentEncodedInstruction;
@@ -169,24 +224,19 @@ public class Processor {
         try {
             currentEncodedInstruction = (EncodedInstruction) this.mainMemory.getFromMemory(currentPcValue);
 
-            Utilities.log("FETCH", "Fetched " + currentEncodedInstruction.getEncodedInstruction()
+            Utilities.log(tag, "Fetched " + currentEncodedInstruction.getEncodedInstruction()
                     + " at address " + Integer.toHexString(currentPcValue));
         } catch (ClassCastException ex) {
             // We reached memory that isn't instructions
-            Utilities.log("FETCH", "nothing to do");
+            Utilities.log(tag, "nothing to do");
             return;
         }
 
         // Increment PC
         this.pc.setValue(currentPcValue + 0x4);
-        Utilities.log("FETCH", "Incremented PC to " + Integer.toHexString(this.pc.getValue()));
+        Utilities.log("\tIncremented PC to " + Integer.toHexString(this.pc.getValue()));
 
         instructionsToDecode.addLast(currentEncodedInstruction);
-
-        if(instructionsToDecode.size() % EXECUTION_UNITS_NUM != 0) {
-            // Fetch one more instruction
-            this.fetch();
-        }
     }
 
     /**
@@ -220,45 +270,49 @@ public class Processor {
         }
 
         // Check if there is a dependency
-        for(DecodedInstruction instruction : this.instructionsToExecute[0]) {
+        for(List<DecodedInstruction> buffer : this.instructionsToExecute) {
+            for (DecodedInstruction instruction : buffer) {
 
-            Integer destinationRegister = instruction.getDestinationRegisterNumber();
+                Integer destinationRegister = instruction.getDestinationRegisterNumber();
 
-            // Instruction doesn't write back anything, so no need to worry
-            if(destinationRegister == null) {
-                continue;
-            }
+                // Instruction doesn't write back anything, so no need to worry
+                if (destinationRegister == null) {
+                    continue;
+                }
 
-            // Check if some instruction is writing back to our source registers
-            if((sourceRegister1 != null && sourceRegister1 == destinationRegister)
-                || (sourceRegister2 != null && sourceRegister2 == destinationRegister)) {
+                // Check if some instruction is writing back to our source registers
+                if ((sourceRegister1 != null && sourceRegister1 == destinationRegister)
+                        || (sourceRegister2 != null && sourceRegister2 == destinationRegister)) {
 
-                // Stall, we need to wait for the result
-                this.instructionsToDecode.addFirst(currentEncodedInstruction);
-                Utilities.log("DECODE", "Can't decode, there's dependency in "
-                        + currentEncodedInstruction.getEncodedInstruction());
-                return false;
+                    // Stall, we need to wait for the result
+                    this.instructionsToDecode.addFirst(currentEncodedInstruction);
+                    Utilities.log("DECODE", "Can't decode, there's dependency in "
+                            + currentEncodedInstruction.getEncodedInstruction());
+                    return false;
+                }
             }
         }
 
-        for(DecodedInstruction instruction : this.instructionsToWriteBack[0]) {
+        for(List<DecodedInstruction> buffer : this.instructionsToWriteBack) {
+            for (DecodedInstruction instruction : buffer) {
 
-            Integer destinationRegister = instruction.getDestinationRegisterNumber();
+                Integer destinationRegister = instruction.getDestinationRegisterNumber();
 
-            // Instruction doesn't write back anything, so no need to worry
-            if(destinationRegister == null) {
-                continue;
-            }
+                // Instruction doesn't write back anything, so no need to worry
+                if (destinationRegister == null) {
+                    continue;
+                }
 
-            // Check if some instruction is writing back to our source registers
-            if((sourceRegister1 != null && sourceRegister1 == destinationRegister)
-                    || (sourceRegister2 != null && sourceRegister2 == destinationRegister)) {
+                // Check if some instruction is writing back to our source registers
+                if ((sourceRegister1 != null && sourceRegister1 == destinationRegister)
+                        || (sourceRegister2 != null && sourceRegister2 == destinationRegister)) {
 
-                // Stall, we need to wait for the result
-                this.instructionsToDecode.addFirst(currentEncodedInstruction);
-                Utilities.log("DECODE", "Can't decode, there's dependency in "
-                        + currentEncodedInstruction.getEncodedInstruction());
-                return false;
+                    // Stall, we need to wait for the result
+                    this.instructionsToDecode.addFirst(currentEncodedInstruction);
+                    Utilities.log("DECODE", "Can't decode, there's dependency in "
+                            + currentEncodedInstruction.getEncodedInstruction());
+                    return false;
+                }
             }
         }
 
@@ -347,15 +401,24 @@ public class Processor {
 
     }
 
-    public void dumpRegisterFile() {
+    public void dumpRegisterFile(boolean dirtyOnly) {
 
         // Dump registers
         final RegisterFile registerFile = this.getRegisterFile();
 
-        System.out.println("Register file dump: ");
+        if(dirtyOnly) {
+            System.out.println("Registers that changed:");
+        } else {
+            System.out.println("Register file dump: ");
+        }
 
         for(int i = 0; i < registerFile.getCount(); i++) {
             Register register = registerFile.getRegister(i);
+
+            if(!register.getDirty() && dirtyOnly) {
+                continue;
+            }
+
             int value = register.getValue();
             System.out.print("R" + String.format("%02d", i) + ":\t0x" + Integer.toHexString(value).toUpperCase());
 
@@ -364,6 +427,10 @@ public class Processor {
             } else {
                 System.out.print("\t\t");
             }
+        }
+
+        if(dirtyOnly && !getPc().getDirty()) {
+            return;
         }
 
         System.out.println("PC:\t0x" + Integer.toHexString(this.getPc().getValue()).toUpperCase());

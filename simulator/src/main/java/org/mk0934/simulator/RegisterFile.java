@@ -37,4 +37,10 @@ public class RegisterFile {
     public int getCount() {
         return this.registers.size();
     }
+
+    public void commit() {
+        for(Register register : registers) {
+            register.setDirty(false);
+        }
+    }
 }
