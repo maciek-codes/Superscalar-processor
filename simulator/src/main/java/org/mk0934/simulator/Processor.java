@@ -14,8 +14,6 @@ import java.util.Scanner;
  */
 public class Processor {
 
-    private final int EXECUTION_UNITS_NUM = 2;
-
     /**
      * Register file in the processor
      */
@@ -71,15 +69,15 @@ public class Processor {
         this.mainMemory = memory;
         this.pc.setValue(0x0);
         this.registerFile = new RegisterFile();
-        this.instructionsToExecute = new LinkedList[EXECUTION_UNITS_NUM];
+        this.instructionsToExecute = new LinkedList[Globals.execution_units_num];
         this.instructionsToDecode = new LinkedList<EncodedInstruction>();
-        this.instructionsToWriteBack = new LinkedList[EXECUTION_UNITS_NUM];
+        this.instructionsToWriteBack = new LinkedList[Globals.execution_units_num];
 
-        this.executionUnits = new ExecutionUnit[EXECUTION_UNITS_NUM];
-        this.writebackUnits = new WriteBackUnit[EXECUTION_UNITS_NUM];
+        this.executionUnits = new ExecutionUnit[Globals.execution_units_num];
+        this.writebackUnits = new WriteBackUnit[Globals.execution_units_num];
 
         // Initialize buffers
-        for(int i = 0; i < EXECUTION_UNITS_NUM; i++) {
+        for(int i = 0; i < Globals.execution_units_num; i++) {
             this.instructionsToExecute[i] = new LinkedList<>();
             this.instructionsToWriteBack[i] = new LinkedList<>();
             this.executionUnits[i] = new ExecutionUnit(instructionsToExecute[i], instructionsToWriteBack[i], this, i);
@@ -103,11 +101,11 @@ public class Processor {
             // Increment cycles
             cycles++;
 
-            if(Globals.IsInteractive) {
+            if (Globals.IsInteractive) {
                 boolean gettingCommands = true;
 
                 Scanner keyboard = new Scanner(System.in);
-                while(gettingCommands && (cycles == cycleToJumpTo || cycleToJumpTo < 0) ) {
+                while (gettingCommands && (cycles == cycleToJumpTo || cycleToJumpTo < 0)) {
                     // Reset the 'break-point'
                     cycleToJumpTo = -1;
                     String inputLine = keyboard.nextLine().trim().toLowerCase();
@@ -116,17 +114,17 @@ public class Processor {
                         // Continue
                         gettingCommands = false;
                         Globals.IsInteractive = false;
-                    } else if(inputLine.equals("n") || inputLine.equals("next")) {
+                    } else if (inputLine.equals("n") || inputLine.equals("next")) {
                         gettingCommands = false;
-                    } else if(inputLine.startsWith("i ") || inputLine.startsWith("info ")){
-                        if(inputLine.contains(" r")) {
+                    } else if (inputLine.startsWith("i ") || inputLine.startsWith("info ")) {
+                        if (inputLine.contains(" r")) {
                             int registerNumber = Integer.parseInt(inputLine.replaceAll("[^0-9]", ""));
                             System.out.println(String.format("R%d: 0x%x", registerNumber,
                                     this.registerFile.getRegister(registerNumber).getValue()));
-                        } else if(inputLine.contains(" mem")) {
+                        } else if (inputLine.contains(" mem")) {
                             this.dumpMemory();
                         }
-                    } else if(inputLine.startsWith("j ") || inputLine.startsWith("jump ")) {
+                    } else if (inputLine.startsWith("j ") || inputLine.startsWith("jump ")) {
                         cycleToJumpTo = Integer.parseInt(inputLine.replaceAll("[^0-9]", ""));
                     }
                 }
@@ -135,29 +133,31 @@ public class Processor {
             Utilities.log("Cycle #" + cycles);
 
             // Write-back
-            for(int i = 0; i < EXECUTION_UNITS_NUM; i++) {
+            for (int i = 0; i < Globals.execution_units_num; i++) {
                 this.writebackUnits[i].writeBack();
             }
 
             // Execute
-            for(int i = 0; i < EXECUTION_UNITS_NUM; i++) {
+            for (int i = 0; i < Globals.execution_units_num; i++) {
                 executionUnits[i].execute();
             }
 
             // Execution unit could have terminated
-            if(!this.isRunning) {
+            if (!this.isRunning) {
                 break;
             }
 
             // Decode
-            boolean decodedFirst = this.decode(0);
-            if(decodedFirst) {
-                // Try decoding next one
-                this.decode(1);
+            boolean decodedPrevious = true;
+            for (int i = 0; i < Globals.execution_units_num; i++) {
+                if(decodedPrevious) {
+                    // Try decoding next one
+                    decodedPrevious = this.decode(i);
+                }
             }
 
             // Fetch
-            for(int i = 0; i < EXECUTION_UNITS_NUM; i++) {
+            for(int i = 0; i < Globals.execution_units_num; i++) {
                 this.fetch(i);
             }
 
@@ -211,7 +211,7 @@ public class Processor {
 
         // Is buffer full?
         // Make sure we have enough instructions to decode later on
-        if(instructionsToDecode.size() > EXECUTION_UNITS_NUM) {
+        if(instructionsToDecode.size() > Globals.execution_units_num) {
             // We reached memory that isn't instructions
             Utilities.log(tag, "Instruction buffer full. Skipping.");
             return;
@@ -244,15 +244,16 @@ public class Processor {
      */
     private boolean decode(int id) {
 
+        String tag = String.format("DECODE(%d)", id);
         if(this.instructionsToDecode.isEmpty()) {
-            Utilities.log("DECODE", "nothing to do");
+            Utilities.log(tag, "nothing to do");
             return false;
         }
 
         // Get next encoded instruction from the buffer to be decoded
         EncodedInstruction currentEncodedInstruction = this.instructionsToDecode.removeFirst();
 
-        Utilities.log("DECODE", "Decoding " + currentEncodedInstruction.getEncodedInstruction());
+        Utilities.log(tag, "Decoding " + currentEncodedInstruction.getEncodedInstruction());
 
         // Decode fetched instruction
         DecodedInstruction currentInstruction = currentEncodedInstruction.decode(this);
@@ -265,7 +266,7 @@ public class Processor {
 
             // Stall, we need to wait for the result
             this.instructionsToDecode.addFirst(currentEncodedInstruction);
-            Utilities.log("DECODE", "Can't decode SVC");
+            Utilities.log(tag, "Can't decode SVC");
             return false;
         }
 
@@ -286,7 +287,7 @@ public class Processor {
 
                     // Stall, we need to wait for the result
                     this.instructionsToDecode.addFirst(currentEncodedInstruction);
-                    Utilities.log("DECODE", "Can't decode, there's dependency in "
+                    Utilities.log(tag, "Can't decode, there's dependency in "
                             + currentEncodedInstruction.getEncodedInstruction());
                     return false;
                 }
@@ -309,7 +310,7 @@ public class Processor {
 
                     // Stall, we need to wait for the result
                     this.instructionsToDecode.addFirst(currentEncodedInstruction);
-                    Utilities.log("DECODE", "Can't decode, there's dependency in "
+                    Utilities.log(tag, "Can't decode, there's dependency in "
                             + currentEncodedInstruction.getEncodedInstruction());
                     return false;
                 }
@@ -322,13 +323,13 @@ public class Processor {
 
             if(branchInstruction.tryTakeBranch(this)) {
 
-                Utilities.log("DECODE", "Branch to " + branchInstruction.getAddressToMove());
+                Utilities.log(tag, "Branch to " + branchInstruction.getAddressToMove());
 
                 // Discard what is in buffers
                 this.instructionsToDecode.clear();
 
                 if(branchInstruction.getOperand() != Operand.JMP) {
-                   for(int i = 0; i < EXECUTION_UNITS_NUM; i++) {
+                   for(int i = 0; i < Globals.execution_units_num; i++) {
                        this.instructionsToExecute[i].clear();
                        this.instructionsToWriteBack[i].clear();
                    }

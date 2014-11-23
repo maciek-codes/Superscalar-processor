@@ -14,4 +14,6 @@ public class Globals {
      * Should simulation be run in interactive mode
      */
     public static boolean IsInteractive = false;
+
+    public static int execution_units_num = 2;
 }

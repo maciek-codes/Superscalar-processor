@@ -252,11 +252,11 @@ public class EncodedInstruction extends Instruction {
     }
 
     /**
-     * Decode LDM instruction
+     * Decode STM instruction
      *
-     * LDM must specify destination register
-     * LDM can take two registers or a register and immediate
-     * @param registerFile
+     * STM must register with the value to store
+     * STM can take two registers or a register and immediate
+     * @param registerFile Register file to look for values at
      * @return
      */
     private DecodedInstruction decodeStoreMemory(RegisterFile registerFile) {
@@ -275,9 +275,6 @@ public class EncodedInstruction extends Instruction {
 
         args[3] = threeArgs[2];
         args[6] = threeArgs[4];
-
-        
-        System.out.println("DECODE: STM will get " + args[1] + " from register r" + args[4]);
 
         return new StoreMemoryInstruction(args, this);
     }

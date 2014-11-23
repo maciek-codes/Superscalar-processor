@@ -35,12 +35,6 @@ public class StoreMemoryInstruction extends DecodedInstruction {
 
     @Override
     public void writeBack(Processor processor) {
-       
-        if(Globals.IsVerbose) {
-            System.out.println("Storing at " + this.valueToStore 
-                + " address " + Integer.toHexString(this.addressToStore));
-        }
-
         // Store in memory
         processor.getMemory().saveToMemory(this.valueToStore, this.addressToStore);
     }
