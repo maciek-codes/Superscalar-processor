@@ -65,5 +65,7 @@ public class ExecutionUnit {
         instruction.execute(this.processor);
 
         this.instructionsToWriteBack.addLast(instruction);
+
+        this.processor.incrementInstructionCounter();
     }
 }

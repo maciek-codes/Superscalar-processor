@@ -1,7 +1,9 @@
 package org.mk0934.simulator;
 
+import com.sun.webpane.sg.prism.UtilitiesImpl;
 import org.mk0934.simulator.instructions.*;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 /**
@@ -49,6 +51,16 @@ public class Processor {
     private WriteBackUnit writebackUnits[];
 
     /**
+     * No instructions executed
+     */
+    private int instructionExecutedCount;
+
+    /**
+     * No cycles
+     */
+    int cycles = 0;
+
+    /**
      * Creates new processor
      */
     public Processor(Memory memory) {
@@ -78,7 +90,6 @@ public class Processor {
     public void run() {
 
         this.isRunning = true;
-        int cycles = 0;
         while(this.isRunning) {
 
             Utilities.log("Cycle #" + cycles);
@@ -94,7 +105,11 @@ public class Processor {
             }
 
             // Decode
-            this.decode();
+            boolean decodedFirst = this.decode(0);
+            if(decodedFirst) {
+                // Try decoding next one
+                this.decode(1);
+            }
 
             // Fetch
             this.fetch();
@@ -104,9 +119,39 @@ public class Processor {
             if(Globals.IsInteractive) {
                 this.dumpRegisterFile();
             }
+
+
+            if(areQueuesEmpty()) {
+                isRunning = false;
+            }
         }
 
-        System.out.println("Total cycles #" + cycles);
+        printStatistics();
+
+    }
+
+    /**
+     * Checks if all queues are empty
+     * @return
+     */
+    private boolean areQueuesEmpty() {
+
+        return this.instructionsToDecode.isEmpty() & this.areExecuteQueuesEmpty() &
+                this.areWriteBackQueuesEmpty();
+    }
+
+    /**
+     * Print out overall statistics
+     */
+    private void printStatistics() {
+
+        System.out.println("--- STATISTICS ---");
+        System.out.println(String.format("Total cycles: %d", cycles));
+        System.out.println(String.format("Total instructions executed: %d", instructionExecutedCount));
+        System.out.println(
+                String.format("IPC (Instructions per cycle): %.3f", instructionExecutedCount / (double)cycles));
+        System.out.println(
+                String.format("CPI (Cycles per instruction): %.3f", cycles / (double)instructionExecutedCount));
     }
 
     /**
@@ -114,59 +159,65 @@ public class Processor {
      */
     private void fetch() {
 
+        // Get the PC value
         int currentPcValue = this.pc.getValue();
 
-        EncodedInstruction currentEncodedInstruction = null;
+        // Encoded instruction we will try to fetch fom the memory
+        EncodedInstruction currentEncodedInstruction;
 
+        // Try to get the instruction from memory
         try {
-            // Get instruction from memory
-             currentEncodedInstruction = (EncodedInstruction) this.mainMemory.getFromMemory(currentPcValue);
-        } catch (ClassCastException ex) {
+            currentEncodedInstruction = (EncodedInstruction) this.mainMemory.getFromMemory(currentPcValue);
 
-            // We reached memory that isn't instructions
-            if(Globals.IsInteractive) {
-                System.out.println("FETCH: nothing to do");
-            }
-            return;
-        }
-
-        if(Globals.IsInteractive) {
-            System.out.println("FETCH: Fetched " + currentEncodedInstruction.getEncodedInstruction()
+            Utilities.log("FETCH", "Fetched " + currentEncodedInstruction.getEncodedInstruction()
                     + " at address " + Integer.toHexString(currentPcValue));
+        } catch (ClassCastException ex) {
+            // We reached memory that isn't instructions
+            Utilities.log("FETCH", "nothing to do");
+            return;
         }
 
         // Increment PC
         this.pc.setValue(currentPcValue + 0x4);
-
-        if(Globals.IsInteractive) {
-            System.out.println("FETCH: Incremented PC to " + Integer.toHexString(this.pc.getValue()));
-        }
+        Utilities.log("FETCH", "Incremented PC to " + Integer.toHexString(this.pc.getValue()));
 
         instructionsToDecode.addLast(currentEncodedInstruction);
+
+        if(instructionsToDecode.size() % EXECUTION_UNITS_NUM != 0) {
+            // Fetch one more instruction
+            this.fetch();
+        }
     }
 
     /**
      * Decode stage
      */
-    private void decode() {
+    private boolean decode(int id) {
 
         if(this.instructionsToDecode.isEmpty()) {
-            if(Globals.IsInteractive) {
-                System.out.println("DECODE: nothing to do");
-            }
-            return;
+            Utilities.log("DECODE", "nothing to do");
+            return false;
         }
 
+        // Get next encoded instruction from the buffer to be decoded
         EncodedInstruction currentEncodedInstruction = this.instructionsToDecode.removeFirst();
 
-        if(Globals.IsInteractive) {
-            System.out.println("DECODE: Decoding " + currentEncodedInstruction.getEncodedInstruction());
-        }
+        Utilities.log("DECODE", "Decoding " + currentEncodedInstruction.getEncodedInstruction());
 
         // Decode fetched instruction
         DecodedInstruction currentInstruction = currentEncodedInstruction.decode(this);
         Integer sourceRegister1 = currentInstruction.getFirstSourceRegisterNumber();
         Integer sourceRegister2 = currentInstruction.getSecondSourceRegisterNumber();
+
+        // If SVC, other queues need to be empty
+        if(currentInstruction.getOperand() == Operand.SVC && (!this.areWriteBackQueuesEmpty() ||
+        !this.areExecuteQueuesEmpty())) {
+
+            // Stall, we need to wait for the result
+            this.instructionsToDecode.addFirst(currentEncodedInstruction);
+            Utilities.log("DECODE", "Can't decode SVC");
+            return false;
+        }
 
         // Check if there is a dependency
         for(DecodedInstruction instruction : this.instructionsToExecute[0]) {
@@ -184,7 +235,9 @@ public class Processor {
 
                 // Stall, we need to wait for the result
                 this.instructionsToDecode.addFirst(currentEncodedInstruction);
-                return;
+                Utilities.log("DECODE", "Can't decode, there's dependency in "
+                        + currentEncodedInstruction.getEncodedInstruction());
+                return false;
             }
         }
 
@@ -203,7 +256,9 @@ public class Processor {
 
                 // Stall, we need to wait for the result
                 this.instructionsToDecode.addFirst(currentEncodedInstruction);
-                return;
+                Utilities.log("DECODE", "Can't decode, there's dependency in "
+                        + currentEncodedInstruction.getEncodedInstruction());
+                return false;
             }
         }
 
@@ -213,23 +268,49 @@ public class Processor {
 
             if(branchInstruction.tryTakeBranch(this)) {
 
-                if(Globals.IsInteractive) {
-                    System.out.println("DECODE: Branch to " + branchInstruction.getAddressToMove());
-                }
+                Utilities.log("DECODE", "Branch to " + branchInstruction.getAddressToMove());
 
                 // Discard what is in buffers
                 this.instructionsToDecode.clear();
 
                 if(branchInstruction.getOperand() != Operand.JMP) {
-	               this.instructionsToExecute[0].clear();
-                   this.instructionsToWriteBack[0].clear();
+                   for(int i = 0; i < EXECUTION_UNITS_NUM; i++) {
+                       this.instructionsToExecute[i].clear();
+                       this.instructionsToWriteBack[i].clear();
+                   }
                 } 
-                return;
+                return false;
             }
+
         } else {
             // Add to the buffer
-            this.instructionsToExecute[0].addLast(currentInstruction);
+            this.instructionsToExecute[id].addLast(currentInstruction);
+            return true;
         }
+
+        return false;
+    }
+
+    private boolean areWriteBackQueuesEmpty() {
+
+        boolean result = true;
+
+        for (LinkedList<?> queue : instructionsToWriteBack) {
+            result = result & queue.isEmpty();
+        }
+
+        return result;
+    }
+
+    private boolean areExecuteQueuesEmpty() {
+
+        boolean result = true;
+
+        for (LinkedList<?> queue : instructionsToExecute) {
+            result = result & queue.isEmpty();
+        }
+
+        return result;
     }
 
     /**
@@ -286,5 +367,9 @@ public class Processor {
         }
 
         System.out.println("PC:\t0x" + Integer.toHexString(this.getPc().getValue()).toUpperCase());
+    }
+
+    public void incrementInstructionCounter() {
+        this.instructionExecutedCount += 1;
     }
 }
