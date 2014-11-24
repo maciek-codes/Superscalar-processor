@@ -6,61 +6,24 @@ import org.mk0934.simulator.RegisterFile;
 import org.mk0934.simulator.Status;
 
 /**
+ * CMP - Compare instruction
  * Created by Maciej Kumorek on 10/28/2014.
  */
-public class CompareInstruction extends DecodedInstruction {
-
-    private final int lhs;
-    private final int rhs;
-    private final int destinationRegisterNumber;
-    private final Integer firstSourceRegisterNumber;
-    private final Integer secondSourceRegisterNumber;
-
-    private Status statusToWrite;
+public class CompareInstruction extends AluInstruction {
 
     public CompareInstruction(Integer args[], EncodedInstruction encodedInstruction) {
-        super(Operand.CMP, encodedInstruction);
-
-        this.destinationRegisterNumber = args[0];
-        this.lhs = args[1];
-        this.rhs = args[2];
-        this.firstSourceRegisterNumber = args[3];
-        this.secondSourceRegisterNumber = args[4];
+        super(args, Operand.CMP, encodedInstruction);
     }
 
     @Override
     public void execute(Processor processor) {
 
         if(lhs < rhs) {
-            this.statusToWrite = Status.LT;
+            this.result = Status.LT.getValue();
         } else if(lhs == rhs) {
-            this.statusToWrite = Status.EQ;
+            this.result = Status.EQ.getValue();
         } else if(lhs > rhs) {
-            this.statusToWrite = Status.GT;
+            this.result = Status.GT.getValue();
         }
-    }
-
-    @Override
-    public void writeBack(Processor processor) {
-
-        int registerNumber = this.destinationRegisterNumber;
-        RegisterFile registerFile = processor.getRegisterFile();
-        Register register = registerFile.getRegister(registerNumber);
-        register.setValue(this.statusToWrite.getValue());
-    }
-
-    @Override
-    public Integer getDestinationRegisterNumber() {
-        return this.destinationRegisterNumber;
-    }
-
-    @Override
-    public Integer getSecondSourceRegisterNumber() {
-        return this.secondSourceRegisterNumber;
-    }
-
-    @Override
-    public Integer getFirstSourceRegisterNumber() {
-        return this.firstSourceRegisterNumber;
     }
 }

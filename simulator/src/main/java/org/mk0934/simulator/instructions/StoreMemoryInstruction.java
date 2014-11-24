@@ -6,7 +6,7 @@ import org.mk0934.simulator.Processor;
 /**
  * Created by Maciej Kumorek on 10/28/2014.
  */
-public class StoreMemoryInstruction extends DecodedInstruction {
+public class StoreMemoryInstruction extends MemoryInstruction {
 
     private final int valueToStore;
     private final int baseAddress;

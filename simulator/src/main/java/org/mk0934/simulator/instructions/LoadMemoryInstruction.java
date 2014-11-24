@@ -7,7 +7,7 @@ import org.mk0934.simulator.RegisterFile;
 /**
  * Created by Maciej Kumorek on 10/28/2014.
  */
-public class LoadMemoryInstruction extends DecodedInstruction {
+public class LoadMemoryInstruction extends MemoryInstruction {
 
     private final int destinationRegisterNumber;
     private final int offset;

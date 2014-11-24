@@ -1,10 +1,11 @@
 package org.mk0934.simulator.instructions;
 
-import org.mk0934.simulator.Processor;
 import org.mk0934.simulator.Status;
 
 /**
- * Created by Maciej Kumorek on 10/31/2014.
+ * BGT - Branch Greater than instruction
+ *
+ * @author Maciej Kumorek
  */
 public class BranchGreaterThanInstruction extends BranchInstruction {
 
