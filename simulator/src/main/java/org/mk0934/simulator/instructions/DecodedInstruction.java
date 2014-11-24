@@ -58,4 +58,10 @@ public abstract class DecodedInstruction {
     public abstract Integer getSecondSourceRegisterNumber();
 
     public abstract Integer getFirstSourceRegisterNumber();
+
+    /**
+     * Get latency of instructions
+     * @return number of cycles latency
+     */
+    public abstract int getLatency();
 }

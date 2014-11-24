@@ -16,4 +16,15 @@ public class MultiplyInstruction extends AluInstruction {
     public void execute(Processor processor) {
         this.result = lhs * rhs;
     }
+
+
+    /**
+     * Get latency of ALU instruction
+     * @return cycles it takes to execute the instruction
+     */
+    @Override
+    public int getLatency() {
+        // MUL will take longer
+        return 2;
+    }
 }

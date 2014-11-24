@@ -66,4 +66,9 @@ public abstract class BranchInstruction extends DecodedInstruction {
     public String getAddressToMove() {
         return Integer.toHexString(this.addressToJump);
     }
+
+    @Override
+    public int getLatency() {
+        return 1;
+    }
 }
