@@ -1,11 +1,11 @@
 package org.mk0934.simulator.instructions;
 
 import org.mk0934.simulator.Processor;
-import org.mk0934.simulator.Register;
-import org.mk0934.simulator.RegisterFile;
 
 /**
- * Created by Maciej Kumorek on 10/24/2014.
+ * SVC - Special pseudo-instruction
+ *
+ * @author Maciej Kumorek
  */
 public class SvcInstruction extends DecodedInstruction {
 
@@ -39,5 +39,10 @@ public class SvcInstruction extends DecodedInstruction {
     @Override
     public Integer getFirstSourceRegisterNumber() {
         return null;
+    }
+
+    @Override
+    public int getLatency() {
+        return 1;
     }
 }
