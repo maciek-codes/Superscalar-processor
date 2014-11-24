@@ -134,21 +134,31 @@ public class EncodedInstruction extends Instruction {
         return this.getImmediateValueFromString(intermediateValMatcher);
     }
 
-    private Integer[] getTreeParams(RegisterFile registerFile) {
+    private Integer[] getThreeParams(RegisterFile registerFile) {
+        return this.getThreeParams(registerFile, true, true, true);
+    }
+
+    private Integer[] getThreeParams(RegisterFile registerFile,
+                                     boolean destinationRequired,
+                                     boolean firstSourceRequired,
+                                     boolean secondSourceRequired) {
 
         Integer[] params = new Integer[5];
 
         // Get destination register
         Matcher matcher = registerPattern.matcher(this.getEncodedInstruction());
+        Matcher intermediateValMatcher = interValPattern.matcher(this.getEncodedInstruction());
         String destinationRegisterName, sourceRegisterName;
 
         if(matcher.find()) {
             destinationRegisterName = matcher.group(0);
             params[0] = this.getRegisterNumberFromString(destinationRegisterName);
-        } else {
+        } else if(destinationRequired) {
             // Destination must be specified
             throw new RuntimeException("Destination register not specified in instruction: "
                     + this.getEncodedInstruction());
+        } else {
+            params[0] = null;
         }
 
         // Get First source register
@@ -158,8 +168,14 @@ public class EncodedInstruction extends Instruction {
             int valueInRegisterOne = registerFile.getRegister(registerNumber).getValue();
             params[1] = valueInRegisterOne;
             params[3] = registerNumber;
-        } else {
+        } else if(intermediateValMatcher.find()) {
+            params[1] =  getImmediateValueFromString(intermediateValMatcher);
+            params[3] = null;
+        } else if(firstSourceRequired) {
             throw new RuntimeException("First argument should be source register");
+        } else {
+            params[1] = null;
+            params[3] = null;
         }
 
         // Get second register or immediate value
@@ -170,16 +186,14 @@ public class EncodedInstruction extends Instruction {
             params[2] = valueInRegister;
             params[4] = registerNumber;
             return params;
-        }
-
-        // Try to get immediate value
-        Matcher intermediateValMatcher = interValPattern.matcher(this.getEncodedInstruction());
-
-        if(intermediateValMatcher.find()) {
+        } else if(intermediateValMatcher.find()) {
             params[2] =  getImmediateValueFromString(intermediateValMatcher);
             params[4] = null;
-        } else {
+        } else if(secondSourceRequired) {
             throw new RuntimeException("Second source register or immediate should be specified");
+        } else {
+            params[2] = null;
+            params[4] = null;
         }
 
         return params;
@@ -208,7 +222,7 @@ public class EncodedInstruction extends Instruction {
      */
     private DecodedInstruction decodeAdd(RegisterFile registerFile) {
 
-        Integer[] args = this.getTreeParams(registerFile);
+        Integer[] args = this.getThreeParams(registerFile);
         return new AddInstruction(args, this);
     }
 
@@ -221,7 +235,7 @@ public class EncodedInstruction extends Instruction {
      * @return
      */
     private DecodedInstruction decodeMul(RegisterFile registerFile) {
-        Integer[] args = this.getTreeParams(registerFile);
+        Integer[] args = this.getThreeParams(registerFile);
         return new MultiplyInstruction(args, this);
     }
 
@@ -234,7 +248,7 @@ public class EncodedInstruction extends Instruction {
      * @return
      */
     private DecodedInstruction decodeSub(RegisterFile registerFile) {
-        Integer[] args = this.getTreeParams(registerFile);
+        Integer[] args = this.getThreeParams(registerFile);
         return new SubInstruction(args, this);
     }
 
@@ -247,7 +261,7 @@ public class EncodedInstruction extends Instruction {
      * @return
      */
     private DecodedInstruction decodeLoadMemory(RegisterFile registerFile) {
-        Integer[] args = this.getTreeParams(registerFile);
+        Integer[] args = this.getThreeParams(registerFile);
         return new LoadMemoryInstruction(args, this);
     }
 
@@ -260,7 +274,7 @@ public class EncodedInstruction extends Instruction {
      * @return
      */
     private DecodedInstruction decodeStoreMemory(RegisterFile registerFile) {
-        Integer[] threeArgs = this.getTreeParams(registerFile);
+        Integer[] threeArgs = this.getThreeParams(registerFile);
         Integer[] args = new Integer[threeArgs.length + 2];
 
         // No destination register
@@ -281,14 +295,14 @@ public class EncodedInstruction extends Instruction {
 
     private DecodedInstruction decodeMov(RegisterFile registerFile) {
 
-        Integer[] args = this.getTwoArgValues(registerFile);
+        Integer[] args = this.getThreeParams(registerFile, true, true, false);
 
         return new MoveInstruction(args, this);
     }
 
     private DecodedInstruction decodeCmp(RegisterFile registerFile) {
 
-        Integer[] args = this.getTreeParams(registerFile);
+        Integer[] args = this.getThreeParams(registerFile);
 
         return new CompareInstruction(args, this);
     }
@@ -298,12 +312,13 @@ public class EncodedInstruction extends Instruction {
         // Try to get immediate value
         Matcher intermediateValMatcher = interValPattern.matcher(this.getEncodedInstruction());
 
-        Integer[] args = new Integer[4];
+        Integer[] args = new Integer[5];
+        args[4] = null; // Only two arguments
 
         // Get destination register
         Matcher matcher = registerPattern.matcher(this.getEncodedInstruction());
         String registerName;
-        int registerNumber = -1;
+        int registerNumber;
 
         if(matcher.find()) {
             registerName = matcher.group(0);

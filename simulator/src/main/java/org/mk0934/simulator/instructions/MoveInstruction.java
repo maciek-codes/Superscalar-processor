@@ -11,6 +11,7 @@ public class MoveInstruction extends AluInstruction {
 
     public MoveInstruction(Integer[] args, EncodedInstruction encodedInstruction) {
         super(args, Operand.MOV, encodedInstruction);
+
     }
 
     /**
@@ -18,8 +19,8 @@ public class MoveInstruction extends AluInstruction {
      */
     @Override
     public void execute(Processor processor) {
-        // No logic in MOV
-        return;
+        // Not much logic in MOV, we just move a value
+        this.result = this.lhs;
     }
 
     // MOV should never have second source register
