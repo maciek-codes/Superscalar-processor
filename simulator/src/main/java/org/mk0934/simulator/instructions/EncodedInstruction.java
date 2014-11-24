@@ -50,9 +50,9 @@ public class EncodedInstruction extends Instruction {
         RegisterFile registerFile = processor.getRegisterFile();
 
         // Choose decoding logic for an operation
-        if(operand == Operand.SVC) {
+        if(operand == Operand.NOP) {
 
-            return new SvcInstruction(operand, this);
+            return new NopInstruction(operand, this);
         } else if(operand == Operand.ADD) {
             // Decode ADD
             return this.decodeAdd(registerFile);

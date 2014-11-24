@@ -1,9 +1,6 @@
 package org.mk0934.simulator.instructions;
 
 import org.mk0934.simulator.Processor;
-import org.mk0934.simulator.RegisterFile;
-
-import java.util.Objects;
 
 /**
  * Created by Maciej Kumorek on 10/16/2014.
@@ -48,8 +45,8 @@ public abstract class Instruction {
             return Operand.LDM;
         } else if(string.startsWith("stm ")) {
             return Operand.STM;
-        } else if(string.startsWith("svc ")) {
-            return Operand.SVC;
+        } else if(string.equals("nop")) {
+            return Operand.NOP;
         } else if(string.startsWith("cmp ")) {
             return Operand.CMP;
         } else if(string.startsWith("bge ")) {

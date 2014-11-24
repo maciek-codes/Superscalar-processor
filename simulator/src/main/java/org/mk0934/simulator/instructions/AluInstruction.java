@@ -11,8 +11,8 @@ import org.mk0934.simulator.RegisterFile;
  */
 public abstract class AluInstruction extends DecodedInstruction {
 
-    protected final int destinationRegisterNumber;
-    protected final int lhs;
+    protected final Integer destinationRegisterNumber;
+    protected final Integer lhs;
     protected final Integer rhs;
     protected final Integer firstSourceRegisterNumber;
     protected final Integer secondSourceRegisterNumber;

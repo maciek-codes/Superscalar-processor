@@ -1,5 +1,6 @@
 package org.mk0934.simulator;
 
+import org.mk0934.simulator.instructions.AluInstruction;
 import org.mk0934.simulator.instructions.DecodedInstruction;
 
 import java.util.LinkedList;
@@ -8,12 +9,12 @@ import java.util.LinkedList;
  * Execution unit for a processor
  * @author Maciej Kumorek
  */
-public class ExecutionUnit {
+public class AluExecutionUnit {
 
     /**
      * Buffer for instructions to execute
      */
-    final private LinkedList<DecodedInstruction> instructionsToExecute;
+    final private LinkedList<AluInstruction> aluIstructionsToExecute;
 
     /**
      * Buffer for instructions to write-back
@@ -35,13 +36,13 @@ public class ExecutionUnit {
      */
     final private Processor processor;
 
-    public ExecutionUnit(LinkedList<DecodedInstruction> instructionsToExecute,
-                         LinkedList<DecodedInstruction> instructionsToWriteBack,
-                         Processor processor,
-                         int id) {
+    public AluExecutionUnit(LinkedList<AluInstruction> aluIstructionsToExecute,
+                            LinkedList<DecodedInstruction> instructionsToWriteBack,
+                            Processor processor,
+                            int id) {
 
         // Assign the references to buffers
-        this.instructionsToExecute = instructionsToExecute;
+        this.aluIstructionsToExecute = aluIstructionsToExecute;
         this.instructionsToWriteBack = instructionsToWriteBack;
         this.processor = processor;
         this.id = id;
@@ -53,12 +54,12 @@ public class ExecutionUnit {
      */
     public void execute() {
 
-        if(this.instructionsToExecute.isEmpty()) {
+        if(this.aluIstructionsToExecute.isEmpty()) {
             Utilities.log(tag, "nothing to do");
             return;
         }
 
-        DecodedInstruction instruction = this.instructionsToExecute.removeFirst();
+        DecodedInstruction instruction = this.aluIstructionsToExecute.removeFirst();
 
         Utilities.log(tag, "Executing " + instruction.getEncodedInstruction());
 

@@ -51,12 +51,16 @@ public class WriteBackUnit {
             return;
         }
 
-        // Get next instruction for write back
-        DecodedInstruction instruction = this.instructionsToWriteBack.removeFirst();
+        // Empty the writeback buffer otherwise
+        while(!this.instructionsToWriteBack.isEmpty()) {
 
-        Utilities.log(tag, "Writing back " + instruction.getEncodedInstruction());
+            // Get next instruction for write back
+            DecodedInstruction instruction = this.instructionsToWriteBack.removeFirst();
 
-        // Tell instruction to write itself back
-        instruction.writeBack(processor);
+            Utilities.log(tag, "Writing back " + instruction.getEncodedInstruction());
+
+            // Tell instruction to write itself back
+            instruction.writeBack(processor);
+        }
     }
 }

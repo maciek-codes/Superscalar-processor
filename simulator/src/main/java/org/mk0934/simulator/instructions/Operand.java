@@ -7,6 +7,6 @@ public enum Operand {
     MOV,
     ADD, SUB, MUL,
     LDM, STM,
-    SVC,
+    NOP,
     CMP, BGE, BGT, BEQ, JMP
 }

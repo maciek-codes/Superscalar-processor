@@ -1,9 +1,6 @@
 package org.mk0934.simulator;
 
-import org.mk0934.simulator.instructions.BranchInstruction;
-import org.mk0934.simulator.instructions.DecodedInstruction;
-import org.mk0934.simulator.instructions.EncodedInstruction;
-import org.mk0934.simulator.instructions.Operand;
+import org.mk0934.simulator.instructions.*;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -14,6 +11,7 @@ import java.util.Scanner;
  */
 public class Processor {
 
+    private final MemoryExecutionUnit memoryExecutionUnit;
     /**
      * Register file in the processor
      */
@@ -37,19 +35,28 @@ public class Processor {
     /**
      * Buffers
      */
-    private LinkedList<DecodedInstruction> instructionsToExecute[];
+    private LinkedList<AluInstruction> aluInstructionsToExecute[];
+    private LinkedList<BranchInstruction> branchInstructionsToExecute;
+    private LinkedList<MemoryInstruction> memoryInstructionsToExecute;
+
     private LinkedList<EncodedInstruction> instructionsToDecode;
-    private LinkedList<DecodedInstruction> instructionsToWriteBack[];
+    private LinkedList<DecodedInstruction> instructionsToWriteBack;
 
     /**
-     * Execution units
+     * ALU Execution units
      */
-    private ExecutionUnit executionUnits[];
+    private AluExecutionUnit executionUnits[];
 
     /**
-     * Write-back units
+     * Branch execution unit
      */
-    private WriteBackUnit writebackUnits[];
+    private BranchExecutionUnit branchExecutionUnit;
+
+
+    /**
+     * Write-back unit
+     */
+    private WriteBackUnit writebackUnit;
 
     /**
      * No instructions executed
@@ -69,19 +76,21 @@ public class Processor {
         this.mainMemory = memory;
         this.pc.setValue(0x0);
         this.registerFile = new RegisterFile();
-        this.instructionsToExecute = new LinkedList[Globals.execution_units_num];
+        this.aluInstructionsToExecute = new LinkedList[Globals.execution_units_num];
         this.instructionsToDecode = new LinkedList<EncodedInstruction>();
-        this.instructionsToWriteBack = new LinkedList[Globals.execution_units_num];
+        this.instructionsToWriteBack = new LinkedList<DecodedInstruction>();
 
-        this.executionUnits = new ExecutionUnit[Globals.execution_units_num];
-        this.writebackUnits = new WriteBackUnit[Globals.execution_units_num];
+        this.executionUnits = new AluExecutionUnit[Globals.execution_units_num];
 
-        // Initialize buffers
+        this.writebackUnit = new WriteBackUnit(this.instructionsToWriteBack, this, 0);
+
+        // Initialize buffers and execution units
+        this.memoryExecutionUnit = new MemoryExecutionUnit();
+        this.branchExecutionUnit = new BranchExecutionUnit();
+
         for(int i = 0; i < Globals.execution_units_num; i++) {
-            this.instructionsToExecute[i] = new LinkedList<>();
-            this.instructionsToWriteBack[i] = new LinkedList<>();
-            this.executionUnits[i] = new ExecutionUnit(instructionsToExecute[i], instructionsToWriteBack[i], this, i);
-            this.writebackUnits[i] = new WriteBackUnit(instructionsToWriteBack[i], this, i);
+            this.aluInstructionsToExecute[i] = new LinkedList<>();
+            this.executionUnits[i] = new AluExecutionUnit(aluInstructionsToExecute[i], instructionsToWriteBack, this, i);
         }
     }
 
@@ -133,18 +142,11 @@ public class Processor {
             Utilities.log("Cycle #" + cycles);
 
             // Write-back
-            for (int i = 0; i < Globals.execution_units_num; i++) {
-                this.writebackUnits[i].writeBack();
-            }
+            writebackUnit.writeBack();
 
             // Execute
             for (int i = 0; i < Globals.execution_units_num; i++) {
                 executionUnits[i].execute();
-            }
-
-            // Execution unit could have terminated
-            if (!this.isRunning) {
-                break;
             }
 
             // Decode
@@ -154,6 +156,11 @@ public class Processor {
                     // Try decoding next one
                     decodedPrevious = this.decode(i);
                 }
+            }
+
+            // Execution unit could have terminated
+            if (!this.isRunning) {
+                break;
             }
 
             // Fetch
@@ -188,6 +195,10 @@ public class Processor {
      * Print out overall statistics
      */
     private void printStatistics() {
+
+        this.dumpRegisterFile(false);
+
+        this.dumpMemory();
 
         System.out.println("--- STATISTICS ---");
         System.out.println(String.format("Total cycles: %d", cycles));
@@ -260,19 +271,19 @@ public class Processor {
         Integer sourceRegister1 = currentInstruction.getFirstSourceRegisterNumber();
         Integer sourceRegister2 = currentInstruction.getSecondSourceRegisterNumber();
 
-        // If SVC, other queues need to be empty
-        if(currentInstruction.getOperand() == Operand.SVC && (!this.areWriteBackQueuesEmpty() ||
-        !this.areExecuteQueuesEmpty())) {
+        // If NOP, other queues need to be empty
+        if(currentInstruction.getOperand() == Operand.NOP
+            && (!this.areWriteBackQueuesEmpty() || !this.areExecuteQueuesEmpty())) {
 
             // Stall, we need to wait for the result
             this.instructionsToDecode.addFirst(currentEncodedInstruction);
-            Utilities.log(tag, "Can't decode SVC");
+            Utilities.log(tag, "Can't decode NOP");
             return false;
         }
 
         // Check if there is a dependency
-        for(List<DecodedInstruction> buffer : this.instructionsToExecute) {
-            for (DecodedInstruction instruction : buffer) {
+        for(List<AluInstruction> buffer : this.aluInstructionsToExecute) {
+            for (AluInstruction instruction : buffer) {
 
                 Integer destinationRegister = instruction.getDestinationRegisterNumber();
 
@@ -294,26 +305,24 @@ public class Processor {
             }
         }
 
-        for(List<DecodedInstruction> buffer : this.instructionsToWriteBack) {
-            for (DecodedInstruction instruction : buffer) {
+        for (DecodedInstruction instruction : instructionsToWriteBack) {
 
-                Integer destinationRegister = instruction.getDestinationRegisterNumber();
+            Integer destinationRegister = instruction.getDestinationRegisterNumber();
 
-                // Instruction doesn't write back anything, so no need to worry
-                if (destinationRegister == null) {
-                    continue;
-                }
+            // Instruction doesn't write back anything, so no need to worry
+            if (destinationRegister == null) {
+                continue;
+            }
 
-                // Check if some instruction is writing back to our source registers
-                if ((sourceRegister1 != null && sourceRegister1 == destinationRegister)
-                        || (sourceRegister2 != null && sourceRegister2 == destinationRegister)) {
+            // Check if some instruction is writing back to our source registers
+            if ((sourceRegister1 != null && sourceRegister1 == destinationRegister)
+                    || (sourceRegister2 != null && sourceRegister2 == destinationRegister)) {
 
-                    // Stall, we need to wait for the result
-                    this.instructionsToDecode.addFirst(currentEncodedInstruction);
-                    Utilities.log(tag, "Can't decode, there's dependency in "
-                            + currentEncodedInstruction.getEncodedInstruction());
-                    return false;
-                }
+                // Stall, we need to wait for the result
+                this.instructionsToDecode.addFirst(currentEncodedInstruction);
+                Utilities.log(tag, "Can't decode, there's dependency in "
+                        + currentEncodedInstruction.getEncodedInstruction());
+                return false;
             }
         }
 
@@ -330,16 +339,17 @@ public class Processor {
 
                 if(branchInstruction.getOperand() != Operand.JMP) {
                    for(int i = 0; i < Globals.execution_units_num; i++) {
-                       this.instructionsToExecute[i].clear();
-                       this.instructionsToWriteBack[i].clear();
+                       this.aluInstructionsToExecute[i].clear();
                    }
+
+                    this.instructionsToWriteBack.clear();
                 } 
                 return false;
             }
 
         } else {
             // Add to the buffer
-            this.instructionsToExecute[id].addLast(currentInstruction);
+            this.aluInstructionsToExecute[id].addLast((AluInstruction)currentInstruction);
             return true;
         }
 
@@ -347,21 +357,14 @@ public class Processor {
     }
 
     private boolean areWriteBackQueuesEmpty() {
-
-        boolean result = true;
-
-        for (LinkedList<?> queue : instructionsToWriteBack) {
-            result = result & queue.isEmpty();
-        }
-
-        return result;
+        return this.instructionsToWriteBack.isEmpty();
     }
 
     private boolean areExecuteQueuesEmpty() {
 
         boolean result = true;
 
-        for (LinkedList<?> queue : instructionsToExecute) {
+        for (LinkedList<?> queue : aluInstructionsToExecute) {
             result = result & queue.isEmpty();
         }
 

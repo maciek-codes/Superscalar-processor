@@ -23,7 +23,7 @@ endfor:
     CMP r3, r1, 0x1         ; if(swapped == true)
     BEQ r3, repeat          ; then goto repeat
 end:
-    SVC 0
+    NOP
 array:
 10
 2

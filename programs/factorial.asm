@@ -10,5 +10,5 @@ forloop:
     ADD r1, r1, 0x1     ; c++
     JMP forloop         ; next loop iteration
 end:
-    SVC 0
+    NOP
 ; Should print 720 (0x2D0)
