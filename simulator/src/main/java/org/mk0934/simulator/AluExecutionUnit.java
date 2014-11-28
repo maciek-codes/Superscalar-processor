@@ -12,16 +12,6 @@ import java.util.LinkedList;
 public class AluExecutionUnit {
 
     /**
-     * Buffer for instructions to execute
-     */
-    final private LinkedList<AluInstruction> aluIstructionsToExecute;
-
-    /**
-     * Buffer for instructions to write-back
-     */
-    final private LinkedList<DecodedInstruction> instructionsToWriteBack;
-
-    /**
      * ID of the execution unit
      */
     private int id;
@@ -36,14 +26,9 @@ public class AluExecutionUnit {
      */
     final private Processor processor;
 
-    public AluExecutionUnit(LinkedList<AluInstruction> aluIstructionsToExecute,
-                            LinkedList<DecodedInstruction> instructionsToWriteBack,
-                            Processor processor,
+    public AluExecutionUnit(Processor processor,
                             int id) {
 
-        // Assign the references to buffers
-        this.aluIstructionsToExecute = aluIstructionsToExecute;
-        this.instructionsToWriteBack = instructionsToWriteBack;
         this.processor = processor;
         this.id = id;
         this.tag += "(" + id + ")";
@@ -54,18 +39,20 @@ public class AluExecutionUnit {
      */
     public void execute() {
 
-        if(this.aluIstructionsToExecute.isEmpty()) {
+        LinkedList<AluInstruction> aluIstructionsToExecute = processor.getAluInstructionsBuffer(id);
+
+        if(aluIstructionsToExecute.isEmpty()) {
             Utilities.log(tag, "nothing to do");
             return;
         }
 
-        DecodedInstruction instruction = this.aluIstructionsToExecute.removeFirst();
+        DecodedInstruction instruction = aluIstructionsToExecute.removeFirst();
 
         Utilities.log(tag, "Executing " + instruction.getEncodedInstruction());
 
         instruction.execute(this.processor);
 
-        this.instructionsToWriteBack.addLast(instruction);
+        this.processor.getWriteBackBuffer().addLast(instruction);
 
         this.processor.incrementInstructionCounter();
     }

@@ -11,7 +11,6 @@ import java.util.Scanner;
  */
 public class Processor {
 
-    private final MemoryExecutionUnit memoryExecutionUnit;
     /**
      * Register file in the processor
      */
@@ -36,8 +35,7 @@ public class Processor {
      * Buffers
      */
     private LinkedList<AluInstruction> aluInstructionsToExecute[];
-    private LinkedList<BranchInstruction> branchInstructionsToExecute;
-    private LinkedList<MemoryInstruction> memoryInstructionsToExecute;
+    private LinkedList<MemoryInstruction> memoryInstructionsToExecute[];
 
     private LinkedList<EncodedInstruction> instructionsToDecode;
     private LinkedList<DecodedInstruction> instructionsToWriteBack;
@@ -46,6 +44,11 @@ public class Processor {
      * ALU Execution units
      */
     private AluExecutionUnit executionUnits[];
+
+    /**
+     * Memory execution units
+     */
+    private final MemoryExecutionUnit memoryExecutionUnits[];
 
     /**
      * Branch execution unit
@@ -76,22 +79,33 @@ public class Processor {
         this.mainMemory = memory;
         this.pc.setValue(0x0);
         this.registerFile = new RegisterFile();
+
+        // Buffers
         this.aluInstructionsToExecute = new LinkedList[Globals.execution_units_num];
-        this.instructionsToDecode = new LinkedList<EncodedInstruction>();
-        this.instructionsToWriteBack = new LinkedList<DecodedInstruction>();
+        this.memoryInstructionsToExecute = new LinkedList[Globals.execution_units_num];
+        this.instructionsToDecode = new LinkedList<>();
+        this.instructionsToWriteBack = new LinkedList<>();
 
+        // Initialize execution units
         this.executionUnits = new AluExecutionUnit[Globals.execution_units_num];
-
         this.writebackUnit = new WriteBackUnit(this.instructionsToWriteBack, this, 0);
+        this.memoryExecutionUnits = new MemoryExecutionUnit[Globals.execution_units_num];
 
-        // Initialize buffers and execution units
-        this.memoryExecutionUnit = new MemoryExecutionUnit();
-        this.branchExecutionUnit = new BranchExecutionUnit();
+        for(int id = 0; id < Globals.execution_units_num; id++) {
 
-        for(int i = 0; i < Globals.execution_units_num; i++) {
-            this.aluInstructionsToExecute[i] = new LinkedList<>();
-            this.executionUnits[i] = new AluExecutionUnit(aluInstructionsToExecute[i], instructionsToWriteBack, this, i);
+            this.aluInstructionsToExecute[id] = new LinkedList<>();
+            this.memoryInstructionsToExecute[id] = new LinkedList<>();
+
+            this.executionUnits[id] = new AluExecutionUnit(this, id);
+            this.memoryExecutionUnits[id] = new MemoryExecutionUnit(this, id);
         }
+
+        // initialize branch unit
+        this.branchExecutionUnit = new BranchExecutionUnit(this,
+            instructionsToDecode,
+            aluInstructionsToExecute,
+            memoryInstructionsToExecute,
+            instructionsToWriteBack);
     }
 
     /**
@@ -144,9 +158,14 @@ public class Processor {
             // Write-back
             writebackUnit.writeBack();
 
-            // Execute
+            // Execute ALU
             for (int i = 0; i < Globals.execution_units_num; i++) {
                 executionUnits[i].execute();
+            }
+
+            // Execute memory execution unit
+            for (int i = 0; i < Globals.execution_units_num; i++) {
+                memoryExecutionUnits[i].execute();
             }
 
             // Decode
@@ -188,7 +207,7 @@ public class Processor {
     private boolean areQueuesEmpty() {
 
         return this.instructionsToDecode.isEmpty() & this.areExecuteQueuesEmpty() &
-                this.areWriteBackQueuesEmpty();
+                this.isWriteBackQueueEmpty();
     }
 
     /**
@@ -250,12 +269,44 @@ public class Processor {
         instructionsToDecode.addLast(currentEncodedInstruction);
     }
 
+    private boolean isThereDependency(List<? extends DecodedInstruction> buffer,
+                                      DecodedInstruction currentInstruction) {
+
+        Integer sourceRegister1 = currentInstruction.getFirstSourceRegisterNumber();
+        Integer sourceRegister2 = currentInstruction.getSecondSourceRegisterNumber();
+
+        for (DecodedInstruction instruction : buffer) {
+
+            Integer destinationRegister = instruction.getDestinationRegisterNumber();
+
+            // Instruction doesn't write back anything, so no need to worry
+            if (destinationRegister == null) {
+                return false;
+            }
+
+            // Check if some instruction is writing back to our source registers
+            if ((sourceRegister1 != null && sourceRegister1 == destinationRegister)
+                    || (sourceRegister2 != null && sourceRegister2 == destinationRegister)) {
+
+
+                Utilities.log("DECODE",
+                        String.format("Can't decode, there's dependency in %s due to %s",
+                                currentInstruction.getEncodedInstruction(),
+                                instruction.getEncodedInstruction()));
+
+                return true;
+            }
+        }
+
+        return false;
+    }
     /**
      * Decode stage
      */
     private boolean decode(int id) {
 
         String tag = String.format("DECODE(%d)", id);
+
         if(this.instructionsToDecode.isEmpty()) {
             Utilities.log(tag, "nothing to do");
             return false;
@@ -268,95 +319,75 @@ public class Processor {
 
         // Decode fetched instruction
         DecodedInstruction currentInstruction = currentEncodedInstruction.decode(this);
-        Integer sourceRegister1 = currentInstruction.getFirstSourceRegisterNumber();
-        Integer sourceRegister2 = currentInstruction.getSecondSourceRegisterNumber();
+
 
         // If NOP, other queues need to be empty
         if(currentInstruction.getOperand() == Operand.NOP
-            && (!this.areWriteBackQueuesEmpty() || !this.areExecuteQueuesEmpty())) {
+            && (!this.isWriteBackQueueEmpty() || !this.areExecuteQueuesEmpty())) {
 
             // Stall, we need to wait for the result
             this.instructionsToDecode.addFirst(currentEncodedInstruction);
-            Utilities.log(tag, "Can't decode NOP");
+            Utilities.log(tag, "Can't NOP just yet");
             return false;
         }
 
-        // Check if there is a dependency
+        // Check if there is a dependency in ALU
         for(List<AluInstruction> buffer : this.aluInstructionsToExecute) {
-            for (AluInstruction instruction : buffer) {
 
-                Integer destinationRegister = instruction.getDestinationRegisterNumber();
-
-                // Instruction doesn't write back anything, so no need to worry
-                if (destinationRegister == null) {
-                    continue;
-                }
-
-                // Check if some instruction is writing back to our source registers
-                if ((sourceRegister1 != null && sourceRegister1 == destinationRegister)
-                        || (sourceRegister2 != null && sourceRegister2 == destinationRegister)) {
-
-                    // Stall, we need to wait for the result
-                    this.instructionsToDecode.addFirst(currentEncodedInstruction);
-                    Utilities.log(tag, "Can't decode, there's dependency in "
-                            + currentEncodedInstruction.getEncodedInstruction());
-                    return false;
-                }
+            if(isThereDependency(buffer, currentInstruction)) {
+                // Stall, we need to wait for the result
+                this.instructionsToDecode.addFirst(currentEncodedInstruction);
+                return false;
             }
         }
 
-        for (DecodedInstruction instruction : instructionsToWriteBack) {
-
-            Integer destinationRegister = instruction.getDestinationRegisterNumber();
-
-            // Instruction doesn't write back anything, so no need to worry
-            if (destinationRegister == null) {
-                continue;
-            }
-
-            // Check if some instruction is writing back to our source registers
-            if ((sourceRegister1 != null && sourceRegister1 == destinationRegister)
-                    || (sourceRegister2 != null && sourceRegister2 == destinationRegister)) {
-
+        // Check memory buffer
+        for(List<MemoryInstruction> buffer : this.memoryInstructionsToExecute) {
+            if (isThereDependency(buffer, currentInstruction)) {
                 // Stall, we need to wait for the result
                 this.instructionsToDecode.addFirst(currentEncodedInstruction);
-                Utilities.log(tag, "Can't decode, there's dependency in "
-                        + currentEncodedInstruction.getEncodedInstruction());
                 return false;
             }
+        }
+
+        // Check write back buffer
+        if(!isWriteBackQueueEmpty() && isThereDependency(this.instructionsToWriteBack, currentInstruction)) {
+
+            // Stall, we need to wait for the result
+            this.instructionsToDecode.addFirst(currentEncodedInstruction);
+            return false;
         }
 
         // Check if it's a branch, if so, take try it here
         if(currentInstruction instanceof BranchInstruction) {
+
             BranchInstruction branchInstruction = (BranchInstruction)currentInstruction;
 
-            if(branchInstruction.tryTakeBranch(this)) {
-
-                Utilities.log(tag, "Branch to " + branchInstruction.getAddressToMove());
-
-                // Discard what is in buffers
-                this.instructionsToDecode.clear();
-
-                if(branchInstruction.getOperand() != Operand.JMP) {
-                   for(int i = 0; i < Globals.execution_units_num; i++) {
-                       this.aluInstructionsToExecute[i].clear();
-                   }
-
-                    this.instructionsToWriteBack.clear();
-                } 
+            if(branchExecutionUnit.execute(branchInstruction)) {
                 return false;
             }
 
-        } else {
-            // Add to the buffer
+        } else if(currentInstruction instanceof AluInstruction) {
+
+            // Add ALU to the buffer
             this.aluInstructionsToExecute[id].addLast((AluInstruction)currentInstruction);
+
+            // Successfully decoded
+            return true;
+
+        } else if(currentInstruction instanceof MemoryInstruction) {
+
+            // Or memory buffer
+            this.memoryInstructionsToExecute[id].addLast((MemoryInstruction)currentInstruction);
+
+            // Successfully decoded
             return true;
         }
 
         return false;
     }
 
-    private boolean areWriteBackQueuesEmpty() {
+    private boolean isWriteBackQueueEmpty() {
         return this.instructionsToWriteBack.isEmpty();
     }
 
@@ -365,6 +396,10 @@ public class Processor {
         boolean result = true;
 
         for (LinkedList<?> queue : aluInstructionsToExecute) {
+            result = result & queue.isEmpty();
+        }
+
+        for (LinkedList<?> queue : memoryInstructionsToExecute) {
             result = result & queue.isEmpty();
         }
 
@@ -442,5 +477,30 @@ public class Processor {
 
     public void incrementInstructionCounter() {
         this.instructionExecutedCount += 1;
+    }
+
+    /**
+     * Returns the buffer containing next memory instructions to be executed
+     * @param id Execution unit id
+     * @return
+     */
+    public final LinkedList<MemoryInstruction> getMemoryInstructionsToExecute(int id) {
+        return this.memoryInstructionsToExecute[id];
+    }
+
+    /**
+     * Return write back buffer
+     */
+    public final LinkedList<DecodedInstruction> getWriteBackBuffer() {
+        return this.instructionsToWriteBack;
+    }
+
+    /**
+     * Return alu instructions scheduled to execute
+     * @param id Execution unit id
+     * @return
+     */
+    public LinkedList<AluInstruction> getAluInstructionsBuffer(int id) {
+        return this.aluInstructionsToExecute[id];
     }
 }
