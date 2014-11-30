@@ -26,6 +26,16 @@ public class AluExecutionUnit {
      */
     final private Processor processor;
 
+    /**
+     * Currently processed instruction
+     */
+    private AluInstruction currentlyExecuted;
+
+    /**
+     * Counter for latency simulation
+     */
+    private int counter;
+
     public AluExecutionUnit(Processor processor,
                             int id) {
 
@@ -41,19 +51,50 @@ public class AluExecutionUnit {
 
         LinkedList<AluInstruction> aluIstructionsToExecute = processor.getAluInstructionsBuffer(id);
 
-        if(aluIstructionsToExecute.isEmpty()) {
+        if(aluIstructionsToExecute.isEmpty() && currentlyExecuted == null) {
             Utilities.log(tag, "nothing to do");
             return;
         }
 
-        DecodedInstruction instruction = aluIstructionsToExecute.removeFirst();
+        // get next instruction
+        if(currentlyExecuted == null) {
+            currentlyExecuted = aluIstructionsToExecute.peek();
+        }
 
-        Utilities.log(tag, "Executing " + instruction.getEncodedInstruction());
+        // Simulate latency
+        if(counter < currentlyExecuted.getLatency()) {
+            counter++;
 
-        instruction.execute(this.processor);
+            StringBuilder message = new StringBuilder();
 
-        this.processor.getWriteBackBuffer().addLast(instruction);
+            message.append(String.format("Executing %s", currentlyExecuted.getEncodedInstruction()));
 
-        this.processor.incrementInstructionCounter();
+            if(currentlyExecuted.getLatency() > 0) {
+                message.append(String.format(" (%d/%d)",  counter, currentlyExecuted.getLatency()));
+            }
+
+            Utilities.log(tag, message.toString());
+        }
+
+        // Finish execution
+        if(counter == currentlyExecuted.getLatency()) {
+
+            // Remove from the queue
+            aluIstructionsToExecute.remove(currentlyExecuted);
+
+            // Execute to get result
+            currentlyExecuted.execute(processor);
+
+            // Add to write back
+            this.processor.getWriteBackBuffer().add(currentlyExecuted);
+
+            // Reset the current instruction pointer
+            this.currentlyExecuted = null;
+
+            // Reset the counter
+            counter = 0;
+
+            this.processor.incrementInstructionCounter();
+        }
     }
 }

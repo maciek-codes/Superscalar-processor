@@ -51,7 +51,10 @@ public class BranchExecutionUnit {
                    }
 
                     this.instructionsToWriteBack.clear();
-                } 
+                }
+
+                this.processor.incrementInstructionCounter();
+
                 return true;
             }
 

@@ -313,7 +313,7 @@ public class Processor {
         }
 
         // Get next encoded instruction from the buffer to be decoded
-        EncodedInstruction currentEncodedInstruction = this.instructionsToDecode.removeFirst();
+        EncodedInstruction currentEncodedInstruction = this.instructionsToDecode.peek();
 
         Utilities.log(tag, "Decoding " + currentEncodedInstruction.getEncodedInstruction());
 
@@ -326,7 +326,6 @@ public class Processor {
             && (!this.isWriteBackQueueEmpty() || !this.areExecuteQueuesEmpty())) {
 
             // Stall, we need to wait for the result
-            this.instructionsToDecode.addFirst(currentEncodedInstruction);
             Utilities.log(tag, "Can't NOP just yet");
             return false;
         }
@@ -336,7 +335,6 @@ public class Processor {
 
             if(isThereDependency(buffer, currentInstruction)) {
                 // Stall, we need to wait for the result
-                this.instructionsToDecode.addFirst(currentEncodedInstruction);
                 return false;
             }
         }
@@ -345,7 +343,6 @@ public class Processor {
         for(List<MemoryInstruction> buffer : this.memoryInstructionsToExecute) {
             if (isThereDependency(buffer, currentInstruction)) {
                 // Stall, we need to wait for the result
-                this.instructionsToDecode.addFirst(currentEncodedInstruction);
                 return false;
             }
         }
@@ -354,17 +351,22 @@ public class Processor {
         if(!isWriteBackQueueEmpty() && isThereDependency(this.instructionsToWriteBack, currentInstruction)) {
 
             // Stall, we need to wait for the result
-            this.instructionsToDecode.addFirst(currentEncodedInstruction);
             return false;
         }
 
         // Check if it's a branch, if so, take try it here
         if(currentInstruction instanceof BranchInstruction) {
 
+            if(!isWriteBackQueueEmpty() || !areExecuteQueuesEmpty()) {
+                return false;
+            }
+
             BranchInstruction branchInstruction = (BranchInstruction)currentInstruction;
 
             if(branchExecutionUnit.execute(branchInstruction)) {
                 return false;
+            } else {
+                instructionsToDecode.remove(currentEncodedInstruction);
             }
 
         } else if(currentInstruction instanceof AluInstruction) {
@@ -373,6 +375,8 @@ public class Processor {
             this.aluInstructionsToExecute[id].addLast((AluInstruction)currentInstruction);
 
             // Successfully decoded
+            this.instructionsToDecode.remove(currentEncodedInstruction);
+
             return true;
 
         } else if(currentInstruction instanceof MemoryInstruction) {
@@ -381,6 +385,8 @@ public class Processor {
             this.memoryInstructionsToExecute[id].addLast((MemoryInstruction)currentInstruction);
 
             // Successfully decoded
+            this.instructionsToDecode.remove(currentEncodedInstruction);
+
             return true;
         }
 

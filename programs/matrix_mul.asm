@@ -14,7 +14,7 @@ forloop:
     ADD r0, r0, 0x1		; i = i + 1
     JMP forloop			;
 end:
-    SVC 0
+    NOP
 arrayA:
     0x0
     0x0

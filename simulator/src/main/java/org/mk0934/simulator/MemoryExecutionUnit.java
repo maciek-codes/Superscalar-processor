@@ -79,6 +79,8 @@ public class MemoryExecutionUnit {
 
             // Reset the counter
             counter = 0;
+
+            this.processor.incrementInstructionCounter();
         }
     }
 }
