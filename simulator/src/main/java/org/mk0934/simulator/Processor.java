@@ -100,14 +100,23 @@ public class Processor {
             this.memoryExecutionUnits[id] = new MemoryExecutionUnit(this, id);
         }
 
+        BranchPredictor predictor = null;
+
+        if(Globals.UseDynamicBranchPredictor) {
+            System.out.println("Using dynamic branch predictor");
+            predictor = new SaturatingCounterBranchPredictor(this);
+        } else if(Globals.UseStaticBranchPredictor) {
+            System.out.println("Using static branch predictor");
+            predictor = new TakeBackwardsBranchPredictor(this);
+        }
+
         // initialize branch unit
         this.branchExecutionUnit = new BranchExecutionUnit(this,
             instructionsToDecode,
             aluInstructionsToExecute,
             memoryInstructionsToExecute,
             instructionsToWriteBack,
-            /*new TakeBackwardsBranchPredictor(this)*/
-            new SaturatingCounterBranchPredictor(this));
+            predictor);
     }
 
     /**

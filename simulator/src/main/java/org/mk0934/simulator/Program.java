@@ -30,7 +30,7 @@ public class Program {
             line = line.trim();
 
             // Ignore comment lines
-            if(line.startsWith(";")) {
+            if(line.startsWith(";") || line.length() == 0) {
                 continue;
             }
 

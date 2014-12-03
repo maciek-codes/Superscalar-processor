@@ -30,7 +30,17 @@ public class Configuration {
                 Globals.execution_units_num = executionUnitNumber;
                 System.out.println(String.format("Using %d execution units", Globals.execution_units_num));
             }
-        } else {
+        } else if(arg.startsWith("-predictor")) {
+
+            if(arg.contains("static")) {
+                Globals.UseStaticBranchPredictor = true;
+                Globals.UseDynamicBranchPredictor = false;
+            } else if(arg.contains("dynamic")) {
+                Globals.UseStaticBranchPredictor = false;
+                Globals.UseDynamicBranchPredictor = true;
+            }
+        }
+        else {
             System.out.println(String.format("Unknown parameter: %s", arg));
         }
     }

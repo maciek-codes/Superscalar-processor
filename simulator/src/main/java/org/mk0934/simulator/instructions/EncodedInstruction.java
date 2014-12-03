@@ -10,8 +10,8 @@ import java.util.regex.Pattern;
  */
 public class EncodedInstruction extends Instruction {
 
-    final Pattern registerPattern = Pattern.compile("r\\d\\d?");
-    final Pattern interValPattern = Pattern.compile("0x\\w+");
+    final Pattern registerPattern = Pattern.compile("r[0-9]+");
+    final Pattern interValPattern = Pattern.compile("(:?0x)?([0-9a-fA-F]{1,8})");
 
     public EncodedInstruction(String instructionString) {
 
@@ -145,15 +145,18 @@ public class EncodedInstruction extends Instruction {
 
         Integer[] params = new Integer[5];
 
+        String input = this.getEncodedInstruction();
+        String[] inputParts = input.split(",");
+
         // Get destination register
-        Matcher matcher = registerPattern.matcher(this.getEncodedInstruction());
-        Matcher intermediateValMatcher = interValPattern.matcher(this.getEncodedInstruction());
+        Matcher matcher = registerPattern.matcher(inputParts[0]);
+        Matcher intermediateValMatcher = interValPattern.matcher(inputParts[0]);
         String destinationRegisterName, sourceRegisterName;
 
-        if(matcher.find()) {
+        if (matcher.find()) {
             destinationRegisterName = matcher.group(0);
             params[0] = this.getRegisterNumberFromString(destinationRegisterName);
-        } else if(destinationRequired) {
+        } else if (destinationRequired) {
             // Destination must be specified
             throw new RuntimeException("Destination register not specified in instruction: "
                     + this.getEncodedInstruction());
@@ -161,39 +164,49 @@ public class EncodedInstruction extends Instruction {
             params[0] = null;
         }
 
+        matcher = registerPattern.matcher(inputParts[1]);
+        intermediateValMatcher = interValPattern.matcher(inputParts[1]);
+
         // Get First source register
-        if(matcher.find()) {
+        if (matcher.find()) {
             sourceRegisterName = matcher.group(0);
             int registerNumber = this.getRegisterNumberFromString(sourceRegisterName);
             int valueInRegisterOne = registerFile.getRegister(registerNumber).getValue();
             params[1] = valueInRegisterOne;
             params[3] = registerNumber;
-        } else if(intermediateValMatcher.find()) {
-            params[1] =  getImmediateValueFromString(intermediateValMatcher);
+        } else if (intermediateValMatcher.find()) {
+            params[1] = getImmediateValueFromString(intermediateValMatcher);
             params[3] = null;
-        } else if(firstSourceRequired) {
+        } else if (firstSourceRequired) {
             throw new RuntimeException("First argument should be source register");
         } else {
             params[1] = null;
             params[3] = null;
         }
 
-        // Get second register or immediate value
-        if(matcher.find()) {
-            sourceRegisterName = matcher.group(0);
-            int registerNumber = this.getRegisterNumberFromString(sourceRegisterName);
-            int valueInRegister = registerFile.getRegister(registerNumber).getValue();
-            params[2] = valueInRegister;
-            params[4] = registerNumber;
-            return params;
-        } else if(intermediateValMatcher.find()) {
-            params[2] =  getImmediateValueFromString(intermediateValMatcher);
-            params[4] = null;
-        } else if(secondSourceRequired) {
-            throw new RuntimeException("Second source register or immediate should be specified");
-        } else {
-            params[2] = null;
-            params[4] = null;
+
+        if (inputParts.length > 2) {
+
+            matcher = registerPattern.matcher(inputParts[2]);
+            intermediateValMatcher = interValPattern.matcher(inputParts[2]);
+
+            // Get second register or immediate value
+            if (matcher.find()) {
+                sourceRegisterName = matcher.group(0);
+                int registerNumber = this.getRegisterNumberFromString(sourceRegisterName);
+                int valueInRegister = registerFile.getRegister(registerNumber).getValue();
+                params[2] = valueInRegister;
+                params[4] = registerNumber;
+                return params;
+            } else if (intermediateValMatcher.find()) {
+                params[2] = getImmediateValueFromString(intermediateValMatcher);
+                params[4] = null;
+            } else if (secondSourceRequired) {
+                throw new RuntimeException("Second source register or immediate should be specified");
+            } else {
+                params[2] = null;
+                params[4] = null;
+            }
         }
 
         return params;
@@ -215,7 +228,7 @@ public class EncodedInstruction extends Instruction {
     /**
      * Decode ADD instruction.
      *
-     * ADD must specify desination register
+     * ADD must specify destination register
      * ADD can take two registers
      * or one register and intermediate value
      * @param registerFile processor's register file
@@ -309,16 +322,19 @@ public class EncodedInstruction extends Instruction {
 
     private Integer[] getTwoArgValues(RegisterFile registerFile) {
 
+        String[] input = this.getEncodedInstruction().split(",");
+
         // Try to get immediate value
-        Matcher intermediateValMatcher = interValPattern.matcher(this.getEncodedInstruction());
+        Matcher intermediateValMatcher = interValPattern.matcher(input[0]);
+        Matcher matcher = registerPattern.matcher(input[0]);
 
         Integer[] args = new Integer[5];
         args[4] = null; // Only two arguments
 
-        // Get destination register
-        Matcher matcher = registerPattern.matcher(this.getEncodedInstruction());
         String registerName;
         int registerNumber;
+
+
 
         if(matcher.find()) {
             registerName = matcher.group(0);
@@ -334,6 +350,10 @@ public class EncodedInstruction extends Instruction {
             throw new RuntimeException("LHS register not specified in instruction: "
                     + this.getEncodedInstruction());
         }
+
+        // Parse next part of the input
+        intermediateValMatcher = interValPattern.matcher(input[1]);
+        matcher = registerPattern.matcher(input[1]);
 
         // Get second register or immediate value
         if(matcher.find()) {

@@ -50,7 +50,6 @@ public class SaturatingCounterBranchPredictor implements BranchPredictor {
         int addressToTake = branchInstruction.getAddressToJump();
 
         if(state == State.StronglyNotTaken || state == State.WeaklyNotTaken) {
-            result.setAddressPredicted(alternateAddress);
             shouldTake = false;
             int t = addressToTake;
             addressToTake = alternateAddress;

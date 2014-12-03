@@ -85,16 +85,16 @@ public class BranchExecutionUnit implements WritebackEvent {
 
     public void predictAndExecute(BranchInstruction branchInstruction, DecodedInstruction blockingInstruction) {
 
-        // Discard what is in buffers
-        this.instructionsToDecode.clear();
 
         // Predict branch using current branch predictor
         BranchPredictorResult branchPredictorResult = predictor.predictBranch(branchInstruction);
-
         this.processor.getPc().setValue(branchPredictorResult.getAddressPredicted());
+        this.instructionsToDecode.clear();
 
         if(branchInstruction.shouldTakeBranch()) {
+
             Utilities.log(tag, "Predicted branch to 0x" + branchInstruction.getAddressToMove());
+            // Discard what is in buffers
         } else {
             Utilities.log(tag, "Predicted not to take the branch to 0x" + branchInstruction.getAddressToMove());
         }

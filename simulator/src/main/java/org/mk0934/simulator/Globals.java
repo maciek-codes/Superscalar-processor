@@ -16,4 +16,14 @@ public class Globals {
     public static boolean IsInteractive = false;
 
     public static int execution_units_num = 2;
+
+    /**
+     * Should use dynamic branch predictor?
+     */
+    public static boolean UseDynamicBranchPredictor = true;
+
+    /**
+     * Should use static branch predictor?
+     */
+    public static boolean UseStaticBranchPredictor;
 }
