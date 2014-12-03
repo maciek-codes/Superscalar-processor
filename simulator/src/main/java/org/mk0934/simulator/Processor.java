@@ -269,8 +269,8 @@ public class Processor {
         instructionsToDecode.addLast(currentEncodedInstruction);
     }
 
-    private boolean isThereDependency(List<? extends DecodedInstruction> buffer,
-                                      DecodedInstruction currentInstruction) {
+    private DecodedInstruction findDependency(List<? extends DecodedInstruction> buffer,
+                                   DecodedInstruction currentInstruction) {
 
         Integer sourceRegister1 = currentInstruction.getFirstSourceRegisterNumber();
         Integer sourceRegister2 = currentInstruction.getSecondSourceRegisterNumber();
@@ -281,7 +281,7 @@ public class Processor {
 
             // Instruction doesn't write back anything, so no need to worry
             if (destinationRegister == null) {
-                return false;
+                return null;
             }
 
             // Check if some instruction is writing back to our source registers
@@ -294,11 +294,11 @@ public class Processor {
                                 currentInstruction.getEncodedInstruction(),
                                 instruction.getEncodedInstruction()));
 
-                return true;
+                return instruction;
             }
         }
 
-        return false;
+        return null;
     }
     /**
      * Decode stage
@@ -330,46 +330,75 @@ public class Processor {
             return false;
         }
 
-        // Check if there is a dependency in ALU
-        for(List<AluInstruction> buffer : this.aluInstructionsToExecute) {
-
-            if(isThereDependency(buffer, currentInstruction)) {
-                // Stall, we need to wait for the result
-                return false;
-            }
-        }
+        // Is there a blocking dependency?
+        boolean isBlocked = false;
+        DecodedInstruction blockingInstruction = null;
 
         // Check memory buffer
         for(List<MemoryInstruction> buffer : this.memoryInstructionsToExecute) {
-            if (isThereDependency(buffer, currentInstruction)) {
+
+            DecodedInstruction blocking = findDependency(buffer, currentInstruction);
+
+            if (blocking != null) {
                 // Stall, we need to wait for the result
-                return false;
+                isBlocked = true;
+                blockingInstruction = blocking;
+                break;
+            }
+        }
+
+        // Check if there is a dependency in ALU
+        for(List<AluInstruction> buffer : this.aluInstructionsToExecute) {
+
+            DecodedInstruction blocking = findDependency(buffer, currentInstruction);
+
+            if(blocking != null && !isBlocked) {
+                // Stall, we need to wait for the result
+                isBlocked = true;
+                blockingInstruction = blocking;
+                break;
             }
         }
 
         // Check write back buffer
-        if(!isWriteBackQueueEmpty() && isThereDependency(this.instructionsToWriteBack, currentInstruction)) {
+        if(!isWriteBackQueueEmpty()) {
 
-            // Stall, we need to wait for the result
-            return false;
+            DecodedInstruction blocking = findDependency(this.instructionsToWriteBack, currentInstruction);
+
+            if(blocking != null && !isBlocked)
+            {
+                // Stall, we need to wait for the result
+                isBlocked = true;
+                blockingInstruction = blocking;
+            }
         }
 
         // Check if it's a branch, if so, take try it here
         if(currentInstruction instanceof BranchInstruction) {
 
-            if(!isWriteBackQueueEmpty() || !areExecuteQueuesEmpty()) {
-                return false;
-            }
-
             BranchInstruction branchInstruction = (BranchInstruction)currentInstruction;
 
-            if(branchExecutionUnit.execute(branchInstruction)) {
-                return false;
+            if(isBlocked == false && !isBlocked) {
+
+                // Just take a branch based on actual values
+                if (branchExecutionUnit.execute(branchInstruction)) {
+                    return false;
+                } else {
+                    instructionsToDecode.remove(currentEncodedInstruction);
+                }
             } else {
+
+                // Otherwise try to guess
+                branchExecutionUnit.predictAndExecute(branchInstruction, blockingInstruction);
                 instructionsToDecode.remove(currentEncodedInstruction);
             }
+        }
 
-        } else if(currentInstruction instanceof AluInstruction) {
+        if(isBlocked) {
+            return false;
+        }
+
+        if(currentInstruction instanceof AluInstruction) {
 
             // Add ALU to the buffer
             this.aluInstructionsToExecute[id].addLast((AluInstruction)currentInstruction);

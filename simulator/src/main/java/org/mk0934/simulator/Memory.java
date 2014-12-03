@@ -1,5 +1,6 @@
 package org.mk0934.simulator;
 
+import org.mk0934.simulator.instructions.BranchInstruction;
 import org.mk0934.simulator.instructions.EncodedInstruction;
 import org.mk0934.simulator.instructions.Instruction;
 
@@ -131,5 +132,16 @@ public class Memory {
         } else {
             return Integer.toHexString(addressToJump);
         }
+    }
+
+    public int getInstructionAddress(BranchInstruction branchInstruction) {
+
+        for(int i = 0; i < values.size(); i++) {
+            if(values.get(i).toString().equals(branchInstruction.getEncodedInstruction())) {
+                return i * 4;
+            }
+        }
+
+        return 0;
     }
 }

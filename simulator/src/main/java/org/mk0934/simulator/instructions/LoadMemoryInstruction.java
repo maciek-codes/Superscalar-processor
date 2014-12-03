@@ -41,7 +41,7 @@ public class LoadMemoryInstruction extends MemoryInstruction {
     }
 
     @Override
-    public void writeBack(Processor processor) {
+    protected void doWriteBack(Processor processor)  {
 
         final RegisterFile registerFile = processor.getRegisterFile();
 

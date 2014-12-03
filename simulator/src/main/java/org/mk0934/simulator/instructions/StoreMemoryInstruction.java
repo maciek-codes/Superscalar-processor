@@ -34,7 +34,7 @@ public class StoreMemoryInstruction extends MemoryInstruction {
     }
 
     @Override
-    public void writeBack(Processor processor) {
+    protected void doWriteBack(Processor processor)  {
         // Store in memory
         processor.getMemory().saveToMemory(this.valueToStore, this.addressToStore);
     }

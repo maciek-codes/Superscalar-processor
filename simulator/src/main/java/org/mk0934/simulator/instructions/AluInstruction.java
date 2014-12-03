@@ -39,7 +39,7 @@ public abstract class AluInstruction extends DecodedInstruction {
     }
 
     @Override
-    public void writeBack(Processor processor) {
+    protected void doWriteBack(Processor processor)  {
 
         if(this.result == null) {
             throw new NullPointerException("Result has not been computed yet. Execute should be called beforehand");
@@ -51,7 +51,6 @@ public abstract class AluInstruction extends DecodedInstruction {
                 getDestinationRegisterNumber());
         register.setValue(this.result);
     }
-
 
     @Override
     public Integer getDestinationRegisterNumber() {

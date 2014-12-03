@@ -14,7 +14,7 @@ public class BranchGreaterThanInstruction extends BranchInstruction {
     }
 
     @Override
-    protected boolean shouldTakeBranch() {
+    public boolean shouldTakeBranch() {
         // Should take the branch?
         if(this.statusRegisterValue == Status.GT) {
             return true;

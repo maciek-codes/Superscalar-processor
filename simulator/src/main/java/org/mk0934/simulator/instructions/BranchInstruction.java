@@ -10,8 +10,9 @@ public abstract class BranchInstruction extends DecodedInstruction {
 
     protected final Integer addressToJump;
     protected final Integer secondRegisterNumber;
-    protected final Status statusRegisterValue;
     protected final Integer statusRegisterNumber;
+
+    protected Status statusRegisterValue;
 
     public BranchInstruction(Operand operand, Integer[] args, EncodedInstruction encodedInstruction) {
             super(operand, encodedInstruction);
@@ -31,7 +32,7 @@ public abstract class BranchInstruction extends DecodedInstruction {
     }
 
     @Override
-    public void writeBack(Processor processor) {
+    protected void doWriteBack(Processor processor)  {
         // No need to do anything
     }
 
@@ -50,7 +51,7 @@ public abstract class BranchInstruction extends DecodedInstruction {
         return this.statusRegisterNumber;
     }
 
-    protected abstract boolean shouldTakeBranch();
+    public abstract boolean shouldTakeBranch();
 
     public boolean tryTakeBranch(Processor processor) {
 
@@ -63,6 +64,10 @@ public abstract class BranchInstruction extends DecodedInstruction {
         return false;
     }
 
+    public int getAddressToJump() {
+        return this.addressToJump;
+    }
+
     public String getAddressToMove() {
         return Integer.toHexString(this.addressToJump);
     }
@@ -70,5 +75,12 @@ public abstract class BranchInstruction extends DecodedInstruction {
     @Override
     public int getLatency() {
         return 1;
+    }
+
+    public void UpdateRegisters(Processor processor) {
+
+        // Value in register
+        int value = processor.getRegisterFile().getRegister(this.getFirstSourceRegisterNumber()).getValue();
+        this.statusRegisterValue = Status.values()[value];
     }
 }

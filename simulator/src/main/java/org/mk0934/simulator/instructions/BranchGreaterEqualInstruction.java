@@ -13,7 +13,7 @@ public class BranchGreaterEqualInstruction extends BranchInstruction {
     }
 
     @Override
-    protected boolean shouldTakeBranch() {
+    public boolean shouldTakeBranch() {
         // Should take the branch?
         if(this.statusRegisterValue == Status.EQ
                 || this.statusRegisterValue == Status.GT) {

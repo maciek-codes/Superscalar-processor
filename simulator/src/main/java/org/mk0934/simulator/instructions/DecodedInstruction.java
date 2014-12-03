@@ -1,8 +1,10 @@
 package org.mk0934.simulator.instructions;
 
 import org.mk0934.simulator.Processor;
-import org.mk0934.simulator.Register;
+import org.mk0934.simulator.WritebackEvent;
 
+import java.lang.reflect.Array;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,6 +18,8 @@ public abstract class DecodedInstruction {
     // Original instruction
     private EncodedInstruction encodedInstruction;
 
+    private Vector<WritebackEvent> writebackEventListeners;
+
     public DecodedInstruction(Operand op, EncodedInstruction encodedInstruction) {
         this.op = op;
         this.encodedInstruction = encodedInstruction;
@@ -23,7 +27,26 @@ public abstract class DecodedInstruction {
 
     public abstract void execute(Processor processor);
 
-    public abstract void writeBack(Processor processor);
+    public void writeBack(Processor processor) {
+
+        this.doWriteBack(processor);
+        this.onWriteBackExecuted();
+    }
+
+    private void onWriteBackExecuted() {
+
+        // Raise the events
+        if(this.writebackEventListeners != null) {
+            WritebackEvent[] listenersToNotify =
+                    this.writebackEventListeners.toArray(new WritebackEvent[0]);
+
+            for (WritebackEvent eventListener : listenersToNotify) {
+                eventListener.onWriteBack(this);
+            }
+        }
+    }
+
+    protected abstract void doWriteBack(Processor processor);
 
     public Operand getOperand() {
         return this.op;
@@ -64,4 +87,24 @@ public abstract class DecodedInstruction {
      * @return number of cycles latency
      */
     public abstract int getLatency();
+
+    public void addWriteBackListener(WritebackEvent eventListener, BranchInstruction branchInstruction) {
+
+        if(this.writebackEventListeners == null) {
+            this.writebackEventListeners = new Vector<>();
+        }
+
+        if(!this.writebackEventListeners.contains(eventListener)) {
+            this.writebackEventListeners.add(eventListener);
+        }
+    }
+
+    public void removeWriteBackListener(WritebackEvent eventListener) {
+
+        if(this.writebackEventListeners != null
+                && this.writebackEventListeners.contains(eventListener)) {
+
+            this.writebackEventListeners.remove(eventListener);
+        }
+    }
 }

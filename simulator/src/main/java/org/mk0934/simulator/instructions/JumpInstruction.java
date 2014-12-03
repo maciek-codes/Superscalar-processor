@@ -10,7 +10,7 @@ public class JumpInstruction extends BranchInstruction {
     }
 
     @Override
-    protected boolean shouldTakeBranch() {
+    public boolean shouldTakeBranch() {
         return true;
     }
 }
