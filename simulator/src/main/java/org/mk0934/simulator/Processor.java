@@ -127,32 +127,7 @@ public class Processor {
             cycles++;
 
             if (Globals.IsInteractive) {
-                boolean gettingCommands = true;
-
-                Scanner keyboard = new Scanner(System.in);
-                while (gettingCommands && (cycles == cycleToJumpTo || cycleToJumpTo < 0)) {
-                    // Reset the 'break-point'
-                    cycleToJumpTo = -1;
-                    String inputLine = keyboard.nextLine().trim().toLowerCase();
-
-                    if (inputLine.equals("c") || inputLine.equals("continue")) {
-                        // Continue
-                        gettingCommands = false;
-                        Globals.IsInteractive = false;
-                    } else if (inputLine.equals("n") || inputLine.equals("next")) {
-                        gettingCommands = false;
-                    } else if (inputLine.startsWith("i ") || inputLine.startsWith("info ")) {
-                        if (inputLine.contains(" r")) {
-                            int registerNumber = Integer.parseInt(inputLine.replaceAll("[^0-9]", ""));
-                            System.out.println(String.format("R%d: 0x%x", registerNumber,
-                                    this.registerFile.getRegister(registerNumber).getValue()));
-                        } else if (inputLine.contains(" mem")) {
-                            this.dumpMemory();
-                        }
-                    } else if (inputLine.startsWith("j ") || inputLine.startsWith("jump ")) {
-                        cycleToJumpTo = Integer.parseInt(inputLine.replaceAll("[^0-9]", ""));
-                    }
-                }
+                cycleToJumpTo = ProcessInteractiveInput(cycleToJumpTo);
             }
 
             Utilities.log("Cycle #" + cycles);
@@ -200,6 +175,73 @@ public class Processor {
 
         printStatistics();
 
+    }
+
+    /**
+     * In the interactive mode, process parameters
+     * @param cycleToJumpTo
+     * @return
+     */
+    private int ProcessInteractiveInput(int cycleToJumpTo) {
+
+        boolean gettingCommands = true;
+
+        Scanner keyboard = new Scanner(System.in);
+
+        // We might be getting a command or skipping some cycles
+        while (gettingCommands && (cycles == cycleToJumpTo || cycleToJumpTo < 0)) {
+            // Reset the 'break-point'
+            cycleToJumpTo = -1;
+
+            String inputLine = keyboard.nextLine().trim().toLowerCase();
+
+            if (inputLine.equals("c") || inputLine.equals("continue")) {
+                // Continue
+                gettingCommands = false;
+                Globals.IsInteractive = false;
+            } else if (inputLine.equals("n") || inputLine.equals("next")) {
+                gettingCommands = false;
+            } else if (inputLine.startsWith("i ") || inputLine.startsWith("info ")) {
+                if (inputLine.contains(" r")) {
+                    int registerNumber = Integer.parseInt(inputLine.replaceAll("[^0-9]", ""));
+
+                    if(registerNumber < 0 || registerNumber > 15) {
+                        System.out.println("No such register. Use r0, r1, ..., r15");
+                    } else {
+                        System.out.println(String.format("R%d: 0x%x", registerNumber,
+                                this.registerFile.getRegister(registerNumber).getValue()));
+                    }
+                } else if (inputLine.contains(" mem")) {
+                    this.dumpMemory();
+                }
+            } else if (inputLine.startsWith("j ") || inputLine.startsWith("jump ")) {
+                cycleToJumpTo = Integer.parseInt(inputLine.replaceAll("[^0-9]", ""));
+            } else {
+                System.out.println("Unknown option");
+                printInteractiveUsage();
+            }
+        }
+
+        return cycleToJumpTo;
+    }
+
+    /**
+     * Print to user how to use interactive commandline
+     */
+    private void printInteractiveUsage() {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("Usage:\n");
+        sb.append("\tn or next - Go to next cycle\n");
+        sb.append("\tc or continue - exit interactive mode and let simulator run\n");
+        sb.append("\ti arg or info arg - Display specific information\n");
+        sb.append("\t\tInfo arguments:\n");
+        sb.append("\t\tr0-r15 - display register value\n");
+        sb.append("\t\tmem or memory - dump memory\n");
+        sb.append("\tj $num or jump $num - skip to $num cycle\n");
+        sb.append('\n');
+
+        System.out.print(sb.toString());
     }
 
     /**
