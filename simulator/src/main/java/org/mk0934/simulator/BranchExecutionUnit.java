@@ -82,19 +82,31 @@ public class BranchExecutionUnit implements WritebackEvent {
 
     public void predictAndExecute(BranchInstruction branchInstruction, DecodedInstruction blockingInstruction) {
 
+        // Get current instruction address
+        int currentAddress = this.processor.getMemory().getInstructionAddress(branchInstruction);
+
         // Our alternative is to not take branch, so PC +4
-        int alternativeAddress = this.processor.getMemory().getInstructionAddress(branchInstruction) + 0x4;
-
-        Utilities.log(tag, "Predicted branch to " + branchInstruction.getAddressToMove());
-
-        this.processor.getPc().setValue(branchInstruction.getAddressToJump());
-        Utilities.log(tag, "PC set to " + branchInstruction.getAddressToMove());
+        int alternativeAddress = currentAddress + 0x4;
 
         // Discard what is in buffers
         this.instructionsToDecode.clear();
 
-        // For now predict to take all branches
-        this.predictions.addLast(new Prediction(branchInstruction, blockingInstruction, true, alternativeAddress));
+        // Predict to always take backward branches, never take forward
+        boolean predictToTake;
+        int predictJumpTo;
+
+        if(branchInstruction.getAddressToJump() > currentAddress) {
+            predictToTake = false;
+            predictJumpTo = alternativeAddress;
+        } else {
+            predictToTake = true;
+            predictJumpTo = branchInstruction.getAddressToJump();
+        }
+
+        this.processor.getPc().setValue(predictJumpTo);
+        Utilities.log(tag, "Predicted branch to 0x" + branchInstruction.getAddressToMove());
+
+        this.predictions.addLast(new Prediction(branchInstruction, blockingInstruction, predictToTake, alternativeAddress));
 
         // Now remember to check
         blockingInstruction.addWriteBackListener(this, branchInstruction);
