@@ -57,7 +57,7 @@ public class WriteBackUnit {
             // Get next instruction for write back
             DecodedInstruction instruction = this.instructionsToWriteBack.removeFirst();
 
-            Utilities.log(tag, "Writing back " + instruction.getEncodedInstruction());
+            Utilities.log(tag, "Writing back " + instruction.getEncodedInstructionString());
 
             // Tell instruction to write itself back
             instruction.writeBack(processor);

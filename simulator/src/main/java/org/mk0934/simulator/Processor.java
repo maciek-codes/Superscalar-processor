@@ -105,7 +105,9 @@ public class Processor {
             instructionsToDecode,
             aluInstructionsToExecute,
             memoryInstructionsToExecute,
-            instructionsToWriteBack);
+            instructionsToWriteBack,
+            /*new TakeBackwardsBranchPredictor(this)*/
+            new SaturatingCounterBranchPredictor(this));
     }
 
     /**
@@ -291,8 +293,8 @@ public class Processor {
 
                 Utilities.log("DECODE",
                         String.format("Can't decode, there's dependency in %s due to %s",
-                                currentInstruction.getEncodedInstruction(),
-                                instruction.getEncodedInstruction()));
+                                currentInstruction.getEncodedInstructionString(),
+                                instruction.getEncodedInstructionString()));
 
                 return instruction;
             }

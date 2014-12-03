@@ -72,7 +72,11 @@ public abstract class DecodedInstruction {
         return Integer.parseInt(matcher.group(0));
     }
 
-    public String getEncodedInstruction() {
+    public Instruction getEncodedInstruction() {
+        return encodedInstruction;
+    }
+
+    public String getEncodedInstructionString() {
         return encodedInstruction.getEncodedInstruction();
     }
 

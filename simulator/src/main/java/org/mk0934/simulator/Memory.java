@@ -137,7 +137,15 @@ public class Memory {
     public int getInstructionAddress(BranchInstruction branchInstruction) {
 
         for(int i = 0; i < values.size(); i++) {
-            if(values.get(i).toString().equals(branchInstruction.getEncodedInstruction())) {
+            Object val = values.get(i);
+
+            if(!(val instanceof Instruction)) {
+                continue;
+            }
+
+            EncodedInstruction instruction = (EncodedInstruction)val;
+
+            if(instruction.equals(branchInstruction.getEncodedInstruction())) {
                 return i * 4;
             }
         }

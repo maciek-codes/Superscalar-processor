@@ -40,13 +40,14 @@ public class BranchExecutionUnit implements WritebackEvent {
     private final List<MemoryInstruction> memoryInstructionsToExecute[];
     private final List<DecodedInstruction> instructionsToWriteBack;
     private final LinkedList<Prediction> predictions;
-
+    private final BranchPredictor predictor;
 
     public BranchExecutionUnit(Processor processor,
         List<EncodedInstruction> instructionsToDecode,
         List<AluInstruction> aluInstructionsToExecute[],
         List<MemoryInstruction> memoryInstructionsToExecute[],
-        List<DecodedInstruction> instructionsToWriteBack) {
+        List<DecodedInstruction> instructionsToWriteBack,
+        BranchPredictor predictor) {
 
         this.processor = processor;
         this.instructionsToDecode = instructionsToDecode;
@@ -55,6 +56,8 @@ public class BranchExecutionUnit implements WritebackEvent {
         this.aluInstructionsToExecute = aluInstructionsToExecute;
 
         this.predictions = new LinkedList<Prediction>();
+
+        this.predictor = predictor;
     }
 
     /**
@@ -71,42 +74,38 @@ public class BranchExecutionUnit implements WritebackEvent {
                 // Discard what is in buffers
                 this.instructionsToDecode.clear();
 
-                // Increment stats
-                this.processor.incrementInstructionCounter();
-
                 return true;
             }
+
+            // Increment stats
+            this.processor.incrementInstructionCounter();
 
             return false;
     }
 
     public void predictAndExecute(BranchInstruction branchInstruction, DecodedInstruction blockingInstruction) {
 
-        // Get current instruction address
-        int currentAddress = this.processor.getMemory().getInstructionAddress(branchInstruction);
-
-        // Our alternative is to not take branch, so PC +4
-        int alternativeAddress = currentAddress + 0x4;
-
         // Discard what is in buffers
         this.instructionsToDecode.clear();
 
-        // Predict to always take backward branches, never take forward
-        boolean predictToTake;
-        int predictJumpTo;
+        // Predict branch using current branch predictor
+        BranchPredictorResult branchPredictorResult = predictor.predictBranch(branchInstruction);
 
-        if(branchInstruction.getAddressToJump() > currentAddress) {
-            predictToTake = false;
-            predictJumpTo = alternativeAddress;
+        this.processor.getPc().setValue(branchPredictorResult.getAddressPredicted());
+
+        if(branchInstruction.shouldTakeBranch()) {
+            Utilities.log(tag, "Predicted branch to 0x" + branchInstruction.getAddressToMove());
         } else {
-            predictToTake = true;
-            predictJumpTo = branchInstruction.getAddressToJump();
+            Utilities.log(tag, "Predicted not to take the branch to 0x" + branchInstruction.getAddressToMove());
         }
 
-        this.processor.getPc().setValue(predictJumpTo);
-        Utilities.log(tag, "Predicted branch to 0x" + branchInstruction.getAddressToMove());
+        this.processor.incrementInstructionCounter();
 
-        this.predictions.addLast(new Prediction(branchInstruction, blockingInstruction, predictToTake, alternativeAddress));
+        this.predictions.addLast(new Prediction(
+                branchInstruction,
+                blockingInstruction,
+                branchPredictorResult.isShouldTake(),
+                branchPredictorResult.getAlternativeAddress()));
 
         // Now remember to check
         blockingInstruction.addWriteBackListener(this, branchInstruction);
@@ -131,6 +130,9 @@ public class BranchExecutionUnit implements WritebackEvent {
 
         // Evaluate the branch
         prediction.predictedBranch.UpdateRegisters(processor);
+
+        // Update the branch predictor
+        predictor.updatePredictor(prediction.predictedBranch, prediction.predictedBranch.shouldTakeBranch());
 
         // Was our prediction incorrect?
         if(prediction.predictedToTake != prediction.predictedBranch.shouldTakeBranch()) {

@@ -3,8 +3,6 @@ package org.mk0934.simulator;
 import org.mk0934.simulator.instructions.MemoryInstruction;
 
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
 
 /**
  * Execution unit for memory instruction
@@ -62,7 +60,7 @@ public class MemoryExecutionUnit {
         if(counter < currentlyExecuted.getLatency()) {
             counter++;
 
-            Utilities.log(tag, String.format("Executing %s (%d/%d)", currentlyExecuted.getEncodedInstruction(),
+            Utilities.log(tag, String.format("Executing %s (%d/%d)", currentlyExecuted.getEncodedInstructionString(),
                     counter,
                     currentlyExecuted.getLatency()));
         }

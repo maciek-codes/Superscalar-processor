@@ -1,7 +1,6 @@
 package org.mk0934.simulator;
 
 import org.mk0934.simulator.instructions.AluInstruction;
-import org.mk0934.simulator.instructions.DecodedInstruction;
 
 import java.util.LinkedList;
 
@@ -67,7 +66,7 @@ public class AluExecutionUnit {
 
             StringBuilder message = new StringBuilder();
 
-            message.append(String.format("Executing %s", currentlyExecuted.getEncodedInstruction()));
+            message.append(String.format("Executing %s", currentlyExecuted.getEncodedInstructionString()));
 
             if(currentlyExecuted.getLatency() > 0) {
                 message.append(String.format(" (%d/%d)",  counter, currentlyExecuted.getLatency()));
