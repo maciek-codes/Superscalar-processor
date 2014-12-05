@@ -1,7 +1,7 @@
-package org.mk0934.simulator;
+package org.mk0934.simulator.units;
 
+import org.mk0934.simulator.*;
 import org.mk0934.simulator.instructions.*;
-import org.mk0934.simulator.Processor;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -139,7 +139,7 @@ public class BranchExecutionUnit implements WritebackEvent {
 
             Utilities.log(tag, "Branch prediction was incorrect.");
 
-            this.processor.getWriteBackBuffer().clear();
+
             for(int i = 0; i < Globals.execution_units_num; i++) {
                 this.processor.getAluInstructionsBuffer(i).clear();
                 this.processor.getMemoryInstructionsToExecute(i).clear();
@@ -154,7 +154,7 @@ public class BranchExecutionUnit implements WritebackEvent {
             // Other predictions should be not relevant now, because we branched wrong
             predictions.clear();
 
-            this.instructionsToWriteBack.clear();
+            //this.processor.getWriteBackBuffer().clear();
             this.instructionsToDecode.clear();
 
             int addressToJump = 0;

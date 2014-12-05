@@ -1,5 +1,7 @@
-package org.mk0934.simulator;
+package org.mk0934.simulator.units;
 
+import org.mk0934.simulator.Processor;
+import org.mk0934.simulator.Utilities;
 import org.mk0934.simulator.instructions.AluInstruction;
 
 import java.util.LinkedList;

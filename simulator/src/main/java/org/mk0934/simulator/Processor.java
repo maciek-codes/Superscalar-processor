@@ -1,6 +1,7 @@
 package org.mk0934.simulator;
 
 import org.mk0934.simulator.instructions.*;
+import org.mk0934.simulator.units.*;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -55,6 +56,10 @@ public class Processor {
      */
     private BranchExecutionUnit branchExecutionUnit;
 
+    /**
+     * Vector execution unit
+     */
+    private VectorExecutionUnit vectorExecutionUnit;
 
     /**
      * Write-back unit
@@ -85,6 +90,7 @@ public class Processor {
         this.memoryInstructionsToExecute = new LinkedList[Globals.execution_units_num];
         this.instructionsToDecode = new LinkedList<>();
         this.instructionsToWriteBack = new LinkedList<>();
+        this.vectorExecutionUnit = new VectorExecutionUnit(this);
 
         // Initialize execution units
         this.executionUnits = new AluExecutionUnit[Globals.execution_units_num];
@@ -153,6 +159,8 @@ public class Processor {
             for (int i = 0; i < Globals.execution_units_num; i++) {
                 memoryExecutionUnits[i].execute();
             }
+
+            this.vectorExecutionUnit.execute();
 
             // Decode
             boolean decodedPrevious = true;
@@ -413,6 +421,18 @@ public class Processor {
             }
         }
 
+        // Check vector instruction buffer
+        if(!this.vectorExecutionUnit.getReservationStation().isEmpty()) {
+
+            DecodedInstruction blocking = findDependency(this.vectorExecutionUnit.getReservationStation(), currentInstruction);
+
+            if(blocking != null && !isBlocked) {
+                // Stall, we need to wait for the result
+                isBlocked = true;
+                blockingInstruction = blocking;
+            }
+        }
+
         // Check write back buffer
         if(!isWriteBackQueueEmpty()) {
 
@@ -470,6 +490,13 @@ public class Processor {
             this.instructionsToDecode.remove(currentEncodedInstruction);
 
             return true;
+        } else if(currentInstruction instanceof VectorInstruction) {
+
+            // Add to the reservation station
+            this.vectorExecutionUnit.getReservationStation().addLast((VectorInstruction)currentInstruction);
+
+            // Successfully decoded
+            this.instructionsToDecode.remove(currentEncodedInstruction);
         }
 
         return false;

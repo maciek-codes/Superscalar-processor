@@ -86,9 +86,68 @@ public class EncodedInstruction extends Instruction {
         } else if(operand == Operand.JMP) {
             // Decode JMP - Jump instruction
             return this.decodeJmp();
+        } else if(operand == Operand.VLDM) {
+            // Decode VLDM - Vector load memory
+            return this.decodeVectorLoad(registerFile);
+        } else if(operand == Operand.VMUL) {
+            return this.decodeVectorMultiply(registerFile);
+        } else if(operand == Operand.VSTM) {
+            return this.decodeVectorStore(registerFile);
         }
 
         throw new RuntimeException("Cannot decode instruction with operand: " + operand);
+    }
+
+    /**
+     * Decode VSTM
+     *
+     * Vectore store memory
+     *
+     * @param registerFile
+     * @return
+     */
+    private DecodedInstruction decodeVectorStore(RegisterFile registerFile) {
+
+        Integer[] threeArgs = this.getThreeParams(registerFile);
+        Integer[] args = new Integer[threeArgs.length + 2];
+
+        // No destination register
+        args[0] = null;
+
+        // Actually first register is not destination, so we need to get its value rather than number
+        args[1] = registerFile.getRegister(threeArgs[0]).getValue();
+        args[4] = threeArgs[0];
+
+        args[2] = threeArgs[1];
+        args[5] = threeArgs[3];
+
+        args[3] = threeArgs[2];
+        args[6] = threeArgs[4];
+
+        return new VectorStoreMemoryInstruction(args, this);
+    }
+
+    /**
+     * Decode VMUL
+     * Vector multiplication
+     * @param registerFile
+     * @return
+     */
+    private DecodedInstruction decodeVectorMultiply(RegisterFile registerFile) {
+        Integer[] args = this.getThreeParams(registerFile);
+        return new VectorMultiplyInstruction(args, this);
+    }
+
+    /**
+     * Decode VLDM
+     *
+     * Vector Load memory
+     * @param registerFile processor's register file
+     * @return instance of VectorLoadInstruction
+     */
+    private DecodedInstruction decodeVectorLoad(RegisterFile registerFile) {
+        Integer[] args = this.getThreeParams(registerFile);
+        return new VectorLoadInstruction(args, this);
     }
 
     /**

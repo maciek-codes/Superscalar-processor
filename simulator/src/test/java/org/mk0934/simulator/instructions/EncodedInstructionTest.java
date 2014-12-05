@@ -1,4 +1,4 @@
-package org.mk0934.simulator;
+package org.mk0934.simulator.instructions;
 
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;

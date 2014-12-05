@@ -3,15 +3,16 @@
 ; }
 start:
     MOV r0, 0x0 ; int i =0
+    MOV r1, 0x0 ; int offset = 0'
 forloop:
-    CMP r4, r0, 0xF
-    BGT r4, end         ; loop or exit
-    MUL r3, r0, 0x4		; align to next byte
-    LDM r1, r3, arrayA	; load B[i]
-    LDM r2, r3, arrayB	; load C[i]
-    MUL r1, r1, r2		; B[i] * C[i]
-    STM r1, r3, arrayA	; Store at A[i] => A[i] = B[i] * C[i]
-    ADD r0, r0, 0x1		; i = i + 1
+    CMP r3, r0, 0xF
+    BGE r3, end         ; loop or exit
+    VLDM r4, r1, arrayA	; load B[i]
+    VLDM r8, r1, arrayB	; load C[i]
+    VMUL r4, r4, r8		; B[i] * C[i]
+    VSTM r4, r1, arrayA	; Store at A[i] => A[i] = B[i] * C[i]
+    ADD r0, r0, 0x4 	; i += 1
+    ADD r1, r1, 0x10    ; offset += 16
     JMP forloop			;
 end:
     NOP

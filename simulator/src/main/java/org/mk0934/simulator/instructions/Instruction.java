@@ -55,8 +55,16 @@ public abstract class Instruction {
             return Operand.BGT;
         } else if(string.startsWith("beq ")) {
             return Operand.BEQ;
-        } if(string.startsWith("jmp ")) {
+        } else if(string.startsWith("jmp ")) {
             return Operand.JMP;
+        } else if(string.startsWith("vldm ")) {
+            return Operand.VLDM;
+        } else if(string.startsWith("vstm ")) {
+            return Operand.VSTM;
+        } else if(string.startsWith("vadd ")) {
+            return Operand.VADD;
+        } else if(string.startsWith("vmul ")) {
+            return Operand.VMUL;
         }
 
         throw new RuntimeException("Unknown operand in string " + string);
