@@ -10,7 +10,6 @@ import org.mk0934.simulator.RegisterFile;
  */
 public class VectorStoreMemoryInstruction extends VectorInstruction {
 
-    private final int valueToStore;
     private final int baseAddress;
     private final int offset;
     private final Integer sourceRegisterNumber;
@@ -20,7 +19,7 @@ public class VectorStoreMemoryInstruction extends VectorInstruction {
     public VectorStoreMemoryInstruction(Integer[] args, EncodedInstruction encodedInstruction) {
         super(Operand.VSTM, encodedInstruction);
 
-        this.valueToStore = args[1];
+        int valueToStore = args[1];
         this.offset = args[2];
         this.baseAddress = args[3];
 

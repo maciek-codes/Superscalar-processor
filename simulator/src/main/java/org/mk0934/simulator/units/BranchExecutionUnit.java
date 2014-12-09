@@ -5,8 +5,6 @@ import org.mk0934.simulator.instructions.*;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by Maciej Kumorek on 11/24/2014.
@@ -35,10 +33,7 @@ public class BranchExecutionUnit implements WritebackEvent {
 
     private final Processor processor;
     private final List<EncodedInstruction> instructionsToDecode;
-    
-    private final List<AluInstruction> aluInstructionsToExecute[];
-    private final List<MemoryInstruction> memoryInstructionsToExecute[];
-    private final List<DecodedInstruction> instructionsToWriteBack;
+
     private final LinkedList<Prediction> predictions;
     private final BranchPredictor predictor;
 
@@ -51,9 +46,9 @@ public class BranchExecutionUnit implements WritebackEvent {
 
         this.processor = processor;
         this.instructionsToDecode = instructionsToDecode;
-        this.instructionsToWriteBack = instructionsToWriteBack;
-        this.memoryInstructionsToExecute = memoryInstructionsToExecute;
-        this.aluInstructionsToExecute = aluInstructionsToExecute;
+        List<DecodedInstruction> instructionsToWriteBack1 = instructionsToWriteBack;
+        List<MemoryInstruction>[] memoryInstructionsToExecute1 = memoryInstructionsToExecute;
+        List<AluInstruction>[] aluInstructionsToExecute1 = aluInstructionsToExecute;
 
         this.predictions = new LinkedList<Prediction>();
 
@@ -79,6 +74,7 @@ public class BranchExecutionUnit implements WritebackEvent {
 
             // Increment stats
             this.processor.incrementInstructionCounter();
+            this.processor.incrementBranchCounter();
 
             return false;
     }
@@ -113,7 +109,7 @@ public class BranchExecutionUnit implements WritebackEvent {
 
     /**
      * Check the instruction result and correct branch prediction
-     * @param writtenInstruction
+     * @param writtenInstruction Instruction that was written
      */
     @Override
     public void onWriteBack(DecodedInstruction writtenInstruction) {
@@ -138,7 +134,7 @@ public class BranchExecutionUnit implements WritebackEvent {
         if(prediction.predictedToTake != prediction.predictedBranch.shouldTakeBranch()) {
 
             Utilities.log(tag, "Branch prediction was incorrect.");
-
+            processor.IncrementMissedBranches();
 
             for(int i = 0; i < Globals.execution_units_num; i++) {
                 this.processor.getAluInstructionsBuffer(i).clear();
@@ -160,7 +156,7 @@ public class BranchExecutionUnit implements WritebackEvent {
             int addressToJump = 0;
 
             // In what way was it incorrect?
-            if(prediction.predictedToTake == false) {
+            if(!prediction.predictedToTake) {
                 Utilities.log(tag, "Branch prediction was incorrect - should  have taken.");
                 addressToJump = prediction.predictedBranch.getAddressToJump();
             } else {
@@ -170,6 +166,8 @@ public class BranchExecutionUnit implements WritebackEvent {
 
             Utilities.log("BranchExecUnit", "Branch to 0x" + Integer.toHexString(addressToJump));
             this.processor.getPc().setValue(addressToJump);
+        } else {
+            processor.incrementCorrectBranches();
         }
     }
 }

@@ -14,10 +14,7 @@ public class BranchEqualInstruction extends BranchInstruction {
     @Override
     public boolean shouldTakeBranch() {
         // Should take the branch?
-        if(this.statusRegisterValue == Status.EQ) {
-            return true;
-        }
+        return this.statusRegisterValue == Status.EQ;
 
-        return false;
     }
 }

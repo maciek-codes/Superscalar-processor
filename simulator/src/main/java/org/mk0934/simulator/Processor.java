@@ -74,7 +74,13 @@ public class Processor {
     /**
      * No cycles
      */
-    int cycles = 0;
+    private int cycles = 0;
+
+    /* Branch stats */
+    private int branchesTakenNotPredicted = 0;
+    private int predictedBranches = 0;
+    private int correctBranches = 0;
+    private int missedBranches = 0;
 
     /**
      * Creates new processor
@@ -281,12 +287,21 @@ public class Processor {
         this.dumpMemory();
 
         System.out.println("--- STATISTICS ---");
+
+        // Cycles stats
         System.out.println(String.format("Total cycles: %d", cycles));
         System.out.println(String.format("Total instructions executed: %d", instructionExecutedCount));
         System.out.println(
                 String.format("IPC (Instructions per cycle): %.3f", instructionExecutedCount / (double)cycles));
         System.out.println(
                 String.format("CPI (Cycles per instruction): %.3f", cycles / (double)instructionExecutedCount));
+
+        // Branch stats
+        System.out.println("Branches stats:");
+        System.out.println(String.format("\ttotal: %d", this.getTotalBranches()));
+        System.out.println(String.format("\ttaken (not predicted): %d", this.branchesTakenNotPredicted));
+        System.out.println(String.format("\tpredicted correctly: %d", this.correctBranches));
+        System.out.println(String.format("\tpredicted missed: %d", this.missedBranches));
     }
 
     /**
@@ -451,7 +466,7 @@ public class Processor {
 
             BranchInstruction branchInstruction = (BranchInstruction)currentInstruction;
 
-            if(isBlocked == false && !isBlocked) {
+            if(!isBlocked) {
 
                 // Just take a branch based on actual values
                 if (branchExecutionUnit.execute(branchInstruction)) {
@@ -617,5 +632,21 @@ public class Processor {
      */
     public LinkedList<AluInstruction> getAluInstructionsBuffer(int id) {
         return this.aluInstructionsToExecute[id];
+    }
+
+    public void incrementCorrectBranches() {
+        this.correctBranches++;
+    }
+
+    public void IncrementMissedBranches() {
+        this.missedBranches++;
+    }
+
+    public void incrementBranchCounter() {
+        this.branchesTakenNotPredicted++;
+    }
+
+    public int getTotalBranches() {
+        return this.branchesTakenNotPredicted + correctBranches + missedBranches;
     }
 }
