@@ -3,6 +3,7 @@ package org.mk0934.simulator;
 import org.mk0934.simulator.instructions.*;
 import org.mk0934.simulator.units.*;
 
+import javax.swing.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
@@ -118,17 +119,15 @@ public class Processor {
             System.out.println("Using dynamic branch predictor");
             predictor = new SaturatingCounterBranchPredictor(this);
         } else if(Globals.UseStaticBranchPredictor) {
-            System.out.println("Using static branch predictor");
+            System.out.println("Using static branch predictor (always backwards, never forwards)");
             predictor = new TakeBackwardsBranchPredictor(this);
+        } else if(Globals.UseNaiveBranchPredictor) {
+            System.out.println("Using static branch predictor (always true)");
+            predictor = new AlwaysTrueBranchPredictor(this);
         }
 
-        // initialize branch unit
-        this.branchExecutionUnit = new BranchExecutionUnit(this,
-            instructionsToDecode,
-            aluInstructionsToExecute,
-            memoryInstructionsToExecute,
-            instructionsToWriteBack,
-            predictor);
+        // Initialize branch unit
+        this.branchExecutionUnit = new BranchExecutionUnit(this, predictor);
     }
 
     /**
@@ -469,11 +468,8 @@ public class Processor {
             if(!isBlocked) {
 
                 // Just take a branch based on actual values
-                if (branchExecutionUnit.execute(branchInstruction)) {
-                    return false;
-                } else {
-                    instructionsToDecode.remove(currentEncodedInstruction);
-                }
+                branchExecutionUnit.execute(branchInstruction);
+                instructionsToDecode.remove(currentEncodedInstruction);
             } else {
 
                 // Otherwise try to guess
@@ -648,5 +644,12 @@ public class Processor {
 
     public int getTotalBranches() {
         return this.branchesTakenNotPredicted + correctBranches + missedBranches;
+    }
+
+    /**
+     * @return List of instructions waiting for decode
+     */
+    public LinkedList<EncodedInstruction> getDecodeBuffer() {
+        return this.instructionsToDecode;
     }
 }

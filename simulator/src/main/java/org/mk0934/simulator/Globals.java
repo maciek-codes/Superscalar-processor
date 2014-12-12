@@ -25,5 +25,10 @@ public class Globals {
     /**
      * Should use static branch predictor?
      */
-    public static boolean UseStaticBranchPredictor;
+    public static boolean UseStaticBranchPredictor = false;
+
+    /**
+     * Should use static branch predictor that always predicts "take" ?
+     */
+    public static boolean UseNaiveBranchPredictor = false;
 }

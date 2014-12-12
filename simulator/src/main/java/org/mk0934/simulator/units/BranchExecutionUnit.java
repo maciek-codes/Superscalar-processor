@@ -32,25 +32,14 @@ public class BranchExecutionUnit implements WritebackEvent {
     private final String tag = "BranchExecUnit";
 
     private final Processor processor;
-    private final List<EncodedInstruction> instructionsToDecode;
 
     private final LinkedList<Prediction> predictions;
     private final BranchPredictor predictor;
 
-    public BranchExecutionUnit(Processor processor,
-        List<EncodedInstruction> instructionsToDecode,
-        List<AluInstruction> aluInstructionsToExecute[],
-        List<MemoryInstruction> memoryInstructionsToExecute[],
-        List<DecodedInstruction> instructionsToWriteBack,
-        BranchPredictor predictor) {
+    public BranchExecutionUnit(Processor processor, BranchPredictor predictor) {
 
         this.processor = processor;
-        this.instructionsToDecode = instructionsToDecode;
-        List<DecodedInstruction> instructionsToWriteBack1 = instructionsToWriteBack;
-        List<MemoryInstruction>[] memoryInstructionsToExecute1 = memoryInstructionsToExecute;
-        List<AluInstruction>[] aluInstructionsToExecute1 = aluInstructionsToExecute;
-
-        this.predictions = new LinkedList<Prediction>();
+        this.predictions = new LinkedList<>();
 
         this.predictor = predictor;
     }
@@ -62,21 +51,26 @@ public class BranchExecutionUnit implements WritebackEvent {
     */
     public boolean execute(BranchInstruction branchInstruction) {
 
-            if(branchInstruction.tryTakeBranch(processor)) {
 
+        // Increment stats
+        this.processor.incrementInstructionCounter();
+        this.processor.incrementBranchCounter();
+
+        // Take the branch if you can
+        if(branchInstruction.tryTakeBranch(processor)) {
+
+            if(branchInstruction.getOperand() == Operand.JMP) {
+                Utilities.log("BranchExecUnit", "Jump to " + branchInstruction.getAddressToMove());
+            } else {
                 Utilities.log("BranchExecUnit", "Branch to " + branchInstruction.getAddressToMove());
-
-                // Discard what is in buffers
-                this.instructionsToDecode.clear();
-
-                return true;
             }
 
-            // Increment stats
-            this.processor.incrementInstructionCounter();
-            this.processor.incrementBranchCounter();
+            this.processor.getDecodeBuffer().clear();
 
-            return false;
+            return true;
+        }
+
+        return false;
     }
 
     public void predictAndExecute(BranchInstruction branchInstruction, DecodedInstruction blockingInstruction) {
@@ -85,7 +79,7 @@ public class BranchExecutionUnit implements WritebackEvent {
         // Predict branch using current branch predictor
         BranchPredictorResult branchPredictorResult = predictor.predictBranch(branchInstruction);
         this.processor.getPc().setValue(branchPredictorResult.getAddressPredicted());
-        this.instructionsToDecode.clear();
+        this.processor.getDecodeBuffer().clear();
 
         if(branchInstruction.shouldTakeBranch()) {
 
@@ -151,7 +145,7 @@ public class BranchExecutionUnit implements WritebackEvent {
             predictions.clear();
 
             //this.processor.getWriteBackBuffer().clear();
-            this.instructionsToDecode.clear();
+            this.processor.getDecodeBuffer().clear();
 
             int addressToJump = 0;
 

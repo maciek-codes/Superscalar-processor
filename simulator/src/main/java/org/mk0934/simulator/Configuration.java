@@ -33,11 +33,13 @@ public class Configuration {
         } else if(arg.startsWith("-predictor")) {
 
             if(arg.contains("static")) {
-                Globals.UseStaticBranchPredictor = true;
                 Globals.UseDynamicBranchPredictor = false;
+                Globals.UseStaticBranchPredictor = true;
             } else if(arg.contains("dynamic")) {
-                Globals.UseStaticBranchPredictor = false;
                 Globals.UseDynamicBranchPredictor = true;
+            } else if(arg.contains("naive")) {
+                Globals.UseDynamicBranchPredictor = false;
+                Globals.UseNaiveBranchPredictor = true;
             }
         }
         else {
